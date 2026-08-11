@@ -4,12 +4,16 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "concurrently \"pnpm --filter @todo/api dev\" \"pnpm --filter @todo/web dev\"",
     "dev:api": "pnpm --filter @todo/api dev",
     "dev:web": "pnpm --filter @todo/web dev",
     "db:generate": "pnpm --filter @todo/api db:generate",
-    "db:migrate": "pnpm --filter @todo/api db:migrate"
+    "db:migrate": "pnpm --filter @todo/api db:migrate",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "pnpm --recursive --if-present run test"
   },
   "keywords": [],
   "author": "",
@@ -23,6 +27,13 @@
   },
   "type": "module",
   "devDependencies": {
-    "concurrently": "^10.0.4"
+    "@eslint/js": "^10.0.1",
+    "concurrently": "^10.0.4",
+    "eslint": "^10.8.1",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-vue": "^10.10.0",
+    "prettier": "^3.9.6",
+    "typescript-eslint": "^8.66.0",
+    "vitest": "^4.1.10"
   }
 }
