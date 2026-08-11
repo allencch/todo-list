@@ -4,7 +4,12 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "concurrently \"pnpm --filter @todo/api dev\" \"pnpm --filter @todo/web dev\"",
+    "dev:api": "pnpm --filter @todo/api dev",
+    "dev:web": "pnpm --filter @todo/web dev",
+    "db:generate": "pnpm --filter @todo/api db:generate",
+    "db:migrate": "pnpm --filter @todo/api db:migrate"
   },
   "keywords": [],
   "author": "",
@@ -16,5 +21,8 @@
       "onFail": "download"
     }
   },
-  "type": "module"
+  "type": "module",
+  "devDependencies": {
+    "concurrently": "^10.0.4"
+  }
 }
