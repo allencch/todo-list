@@ -1,4 +1,6 @@
 # Roadmap
 
-- [ ] Add test framework
-- [ ] Add eslint and prettier
+## Preparing
+
+- [x] Add test framework
+- [x] Add eslint and prettier
