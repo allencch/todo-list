@@ -7,5 +7,5 @@
 
 ## Feature
 
-- [ ] Model design
+- [x] Model design
 - [ ] API route and CRUD

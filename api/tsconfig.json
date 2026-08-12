@@ -2,6 +2,7 @@
   "compilerOptions": {
     "module": "nodenext",
     "target": "ES2022",
+    "strict": true,
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"]
