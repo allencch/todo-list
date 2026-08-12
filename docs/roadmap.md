@@ -21,6 +21,7 @@ API:
 
 Web:
 - [x] Initial page
+- [x] Frontend CRUD
 - [ ] Desktop design
 - [ ] Responsive for mobile
 - [ ] Error handling

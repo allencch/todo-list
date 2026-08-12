@@ -2,20 +2,28 @@
 import { ref } from 'vue';
 import { Pencil, ChevronRight, Trash2 } from '@lucide/vue';
 import type { TodoItem } from '@/types/todo';
-import FormModal from '@/components/todos/FormModal.vue';
+import FormModal from './FormModal.vue';
+import DeleteModal from './DeleteModal.vue';
 
 defineProps<{ todo: TodoItem }>();
 
 const emit = defineEmits<{
   submit: [todo: TodoItem];
+  delete: [todo: TodoItem];
 }>();
 
 const expanded = ref(false);
 const showEditModal = ref(false);
+const showDeleteModal = ref(false);
 
 function handleSubmit(todo: TodoItem) {
   showEditModal.value = false;
   emit('submit', todo);
+}
+
+function handleDelete(todo: TodoItem) {
+  showDeleteModal.value = false;
+  emit('delete', todo);
 }
 </script>
 
@@ -42,7 +50,7 @@ function handleSubmit(todo: TodoItem) {
           <Pencil class="h-4 w-4" />
         </button>
         <button type="button" aria-label="Delete" class="cursor-pointer text-red-500">
-          <Trash2 class="h-4 w-4" />
+          <Trash2 class="h-4 w-4" @click="showDeleteModal = true" />
         </button>
       </div>
     </div>
@@ -58,6 +66,12 @@ function handleSubmit(todo: TodoItem) {
       :todo="todo"
       @close="showEditModal = false"
       @submit="handleSubmit"
+    />
+    <DeleteModal
+      v-if="showDeleteModal"
+      :todo="todo"
+      @close="showDeleteModal = false"
+      @submit="handleDelete"
     />
   </li>
 </template>
