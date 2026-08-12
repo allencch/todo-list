@@ -5,7 +5,7 @@ import { todoItems } from '@/db/schema';
 
 const { fastify } = await import('@/index');
 
-describe.only('GET /api/todos', () => {
+describe('GET /api/todos', () => {
   it('list todo items', async () => {
     const [seeded] = await db.insert(todoItems).values({ name: 'Test todo' }).returning();
 
@@ -19,6 +19,23 @@ describe.only('GET /api/todos', () => {
     expect(body).toEqual(
       expect.arrayContaining([expect.objectContaining({ id: seeded.id, name: 'Test todo' })]),
     );
+
+    await db.delete(todoItems).where(eq(todoItems.id, seeded.id));
+  });
+});
+
+describe.only('GET /api/todos/:id', () => {
+  it('get todo item', async () => {
+    const [seeded] = await db.insert(todoItems).values({ name: 'Test todo' }).returning();
+
+    const response = await fastify.inject({
+      method: 'GET',
+      url: `/api/todos/${seeded.id}`,
+    });
+
+    expect(response.statusCode).toBe(200);
+    const body = response.json();
+    expect(body).toEqual(expect.objectContaining({ id: seeded.id, name: 'Test todo' }));
 
     await db.delete(todoItems).where(eq(todoItems.id, seeded.id));
   });

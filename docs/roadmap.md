@@ -12,7 +12,7 @@
 - [ ] API route and CRUD
   + [x] create
   + [x] list
-  + [ ] show
+  + [x] show
   + [ ] update
   + [ ] delete
 

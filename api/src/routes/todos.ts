@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { eq } from 'drizzle-orm';
 import { todoItems } from '@/db/schema';
 import { db } from '@/db/client';
 
@@ -28,8 +29,16 @@ async function listTodos(request, reply) {
   return todos;
 }
 
+async function getTodo(request, reply) {
+  const { id } = request.params;
+  const [todo] = await db.select().from(todoItems).where(eq(todoItems.id, id));
+  reply.code(200);
+  return todo;
+}
+
 async function todoRoutes(fastify, options) {
   fastify.get('', listTodos);
+  fastify.get('/:id', getTodo);
   fastify.post('', createTodo);
 }
 
