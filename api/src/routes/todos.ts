@@ -65,11 +65,23 @@ async function updateTodo(request, reply) {
   return todo;
 }
 
+async function deleteTodo(request, reply) {
+  const { id } = request.params;
+  const [todo] = await db.select().from(todoItems).where(eq(todoItems.id, Number(id)));
+  if (!todo) {
+    reply.code(404);
+    return { error: 'Todo not found' };
+  }
+  await db.delete(todoItems).where(eq(todoItems.id, Number(id)));
+  return reply.status(204).send();
+}
+
 async function todoRoutes(fastify, options) {
   fastify.get('', listTodos);
   fastify.get('/:id', getTodo);
   fastify.post('', createTodo);
   fastify.patch('/:id', updateTodo);
+  fastify.delete('/:id', deleteTodo);
 }
 
 export { todoRoutes };

@@ -93,3 +93,17 @@ describe('PATCH /api/todos/:id', () => {
     await db.delete(todoItems).where(eq(todoItems.id, seeded.id));
   });
 });
+
+describe('DELETE /api/todos/:id', () => {
+  it('destroy a todo item', async () => {
+    const [seeded] = await db.insert(todoItems).values({ name: 'Test todo' }).returning();
+    const response = await fastify.inject({
+      method: 'DELETE',
+      url: `/api/todos/${seeded.id}`
+    });
+    expect(response.statusCode).toBe(204);
+
+    const [found] = await db.select().from(todoItems).where(eq(todoItems.id, seeded.id));
+    expect(found).toBeUndefined();
+  });
+});
