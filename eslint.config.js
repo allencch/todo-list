@@ -20,6 +20,14 @@ export default tseslint.config(
     },
   },
   {
+    files: ['web/**/*.{ts,vue}'],
+    languageOptions: {
+      globals: {
+        fetch: 'readonly',
+      },
+    },
+  },
+  {
     rules: {
       'vue/multi-word-component-names': 'off',
       '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
