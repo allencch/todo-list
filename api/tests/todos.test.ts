@@ -99,7 +99,7 @@ describe('DELETE /api/todos/:id', () => {
     const [seeded] = await db.insert(todoItems).values({ name: 'Test todo' }).returning();
     const response = await fastify.inject({
       method: 'DELETE',
-      url: `/api/todos/${seeded.id}`
+      url: `/api/todos/${seeded.id}`,
     });
     expect(response.statusCode).toBe(204);
 

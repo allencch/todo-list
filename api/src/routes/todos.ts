@@ -33,7 +33,10 @@ async function listTodos(request, reply) {
 
 async function getTodo(request, reply) {
   const { id } = request.params;
-  const [todo] = await db.select().from(todoItems).where(eq(todoItems.id, Number(id)));
+  const [todo] = await db
+    .select()
+    .from(todoItems)
+    .where(eq(todoItems.id, Number(id)));
   if (!todo) {
     reply.code(404);
     return { error: 'Todo not found' };
@@ -67,7 +70,10 @@ async function updateTodo(request, reply) {
 
 async function deleteTodo(request, reply) {
   const { id } = request.params;
-  const [todo] = await db.select().from(todoItems).where(eq(todoItems.id, Number(id)));
+  const [todo] = await db
+    .select()
+    .from(todoItems)
+    .where(eq(todoItems.id, Number(id)));
   if (!todo) {
     reply.code(404);
     return { error: 'Todo not found' };
