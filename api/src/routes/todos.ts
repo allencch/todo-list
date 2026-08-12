@@ -10,6 +10,8 @@ const createTodoSchema = z.object({
   priority: z.enum(['low', 'medium', 'high']).optional(),
 });
 
+const updateTodoSchema = createTodoSchema.partial();
+
 async function createTodo(request, reply) {
   const parsed = createTodoSchema.safeParse(request.body);
   if (!parsed.success) {
@@ -40,10 +42,34 @@ async function getTodo(request, reply) {
   return todo;
 }
 
+async function updateTodo(request, reply) {
+  const parsed = updateTodoSchema.safeParse(request.body);
+  if (!parsed.success) {
+    reply.code(400);
+    return { error: parsed.error.flatten() };
+  }
+
+  const { id } = request.params;
+  const [todo] = await db
+    .update(todoItems)
+    .set(parsed.data)
+    .where(eq(todoItems.id, Number(id)))
+    .returning();
+
+  if (!todo) {
+    reply.code(404);
+    return { error: 'Todo not found' };
+  }
+
+  reply.code(200);
+  return todo;
+}
+
 async function todoRoutes(fastify, options) {
   fastify.get('', listTodos);
   fastify.get('/:id', getTodo);
   fastify.post('', createTodo);
+  fastify.patch('/:id', updateTodo);
 }
 
 export { todoRoutes };

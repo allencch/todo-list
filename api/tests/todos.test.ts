@@ -75,3 +75,21 @@ describe('POST /api/todos', () => {
     expect(response.statusCode).toBe(400);
   });
 });
+
+describe('PATCH /api/todos/:id', () => {
+  it('updates a todo item', async () => {
+    const [seeded] = await db.insert(todoItems).values({ name: 'Test todo' }).returning();
+
+    const response = await fastify.inject({
+      method: 'PATCH',
+      url: `/api/todos/${seeded.id}`,
+      payload: { name: 'Updated todo' },
+    });
+
+    expect(response.statusCode).toBe(200);
+    const body = response.json();
+    expect(body).toEqual(expect.objectContaining({ id: seeded.id, name: 'Updated todo' }));
+
+    await db.delete(todoItems).where(eq(todoItems.id, seeded.id));
+  });
+});
