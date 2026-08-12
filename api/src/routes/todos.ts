@@ -31,7 +31,11 @@ async function listTodos(request, reply) {
 
 async function getTodo(request, reply) {
   const { id } = request.params;
-  const [todo] = await db.select().from(todoItems).where(eq(todoItems.id, id));
+  const [todo] = await db.select().from(todoItems).where(eq(todoItems.id, Number(id)));
+  if (!todo) {
+    reply.code(404);
+    return { error: 'Todo not found' };
+  }
   reply.code(200);
   return todo;
 }

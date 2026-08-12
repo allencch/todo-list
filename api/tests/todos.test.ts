@@ -24,7 +24,7 @@ describe('GET /api/todos', () => {
   });
 });
 
-describe.only('GET /api/todos/:id', () => {
+describe('GET /api/todos/:id', () => {
   it('get todo item', async () => {
     const [seeded] = await db.insert(todoItems).values({ name: 'Test todo' }).returning();
 
@@ -38,6 +38,15 @@ describe.only('GET /api/todos/:id', () => {
     expect(body).toEqual(expect.objectContaining({ id: seeded.id, name: 'Test todo' }));
 
     await db.delete(todoItems).where(eq(todoItems.id, seeded.id));
+  });
+
+  it('returns 404 for a non-existent todo item', async () => {
+    const response = await fastify.inject({
+      method: 'GET',
+      url: '/api/todos/999999',
+    });
+
+    expect(response.statusCode).toBe(404);
   });
 });
 
@@ -54,5 +63,15 @@ describe('POST /api/todos', () => {
     expect(body.name).toBe('Test todo');
 
     await db.delete(todoItems).where(eq(todoItems.id, body.id));
+  });
+
+  it('returns 400 for an invalid payload', async () => {
+    const response = await fastify.inject({
+      method: 'POST',
+      url: '/api/todos',
+      payload: {},
+    });
+
+    expect(response.statusCode).toBe(400);
   });
 });
