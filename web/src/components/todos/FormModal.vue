@@ -21,7 +21,7 @@ const priority = ref<'low' | 'medium' | 'high' | ''>(
 const showErrorModal = ref(false);
 const errorMessage = ref('');
 
-async function createTodo() {
+function createTodo() {
   return fetch('/api/todos', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -34,7 +34,7 @@ async function createTodo() {
   });
 }
 
-async function patchTodo() {
+function patchTodo() {
   return fetch(`/api/todos/${todoId.value}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },

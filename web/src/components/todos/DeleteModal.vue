@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { ref } from 'vue';
+import ErrorModal from '@/components/shared/ErrorModal.vue';
 import type { TodoItem } from '@/types/todo';
 
 const props = defineProps<{ todo: TodoItem }>();
@@ -8,10 +10,43 @@ const emit = defineEmits<{
   submit: [todo: TodoItem];
 }>();
 
+const showErrorModal = ref(false);
+const errorMessage = ref('');
+
+
+function buildErrorMessage(body) {
+  if (typeof body.error === 'string') {
+    return body.error;
+  }
+
+  return (
+    Object.entries(body.error?.fieldErrors ?? {})
+      .map(([key, value]) => `${key}: ${value}`)
+      .join('; ') || 'Something went wrong.'
+  );
+}
+
+async function safeParseJson(response: Response) {
+  const text = await response.text();
+  if (!text) return null;
+  try {
+    return JSON.parse(text);
+  } catch {
+    return null;
+  }
+}
+
 async function handleDelete() {
-  await fetch(`/api/todos/${props.todo.id}`, {
+  const response = await fetch(`/api/todos/${props.todo.id}`, {
     method: 'DELETE',
   });
+
+  if (!response.ok) {
+    const body = await safeParseJson(response);
+    errorMessage.value = buildErrorMessage(body);
+    showErrorModal.value = true;
+    return;
+  }
 
   emit('submit', props.todo);
 }
@@ -43,4 +78,10 @@ async function handleDelete() {
       </div>
     </div>
   </div>
+
+  <ErrorModal
+    v-if="showErrorModal"
+    :message="errorMessage"
+    @close="showErrorModal = false"
+  />
 </template>
