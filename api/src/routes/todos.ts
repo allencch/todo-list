@@ -9,18 +9,28 @@ const createTodoSchema = z.object({
   priority: z.enum(['low', 'medium', 'high']).optional(),
 });
 
-async function todoRoutes(fastify, options) {
-  fastify.post('', async (request, reply) => {
-    const parsed = createTodoSchema.safeParse(request.body);
-    if (!parsed.success) {
-      reply.code(400);
-      return { error: parsed.error.flatten() };
-    }
+async function createTodo(request, reply) {
+  const parsed = createTodoSchema.safeParse(request.body);
+  if (!parsed.success) {
+    reply.code(400);
+    return { error: parsed.error.flatten() };
+  }
 
-    const [todo] = await db.insert(todoItems).values(parsed.data).returning();
-    reply.code(201);
-    return todo;
-  });
+  const [todo] = await db.insert(todoItems).values(parsed.data).returning();
+  reply.code(201);
+  return todo;
+}
+
+// TODO: Add pagination, sorting, filtering
+async function listTodos(request, reply) {
+  const todos = await db.select().from(todoItems);
+  reply.code(200);
+  return todos;
+}
+
+async function todoRoutes(fastify, options) {
+  fastify.get('', listTodos);
+  fastify.post('', createTodo);
 }
 
 export { todoRoutes };
