@@ -20,9 +20,10 @@ API:
   + [x] error handling
 
 Web:
-- [ ] Initial page
+- [x] Initial page
 - [ ] Desktop design
 - [ ] Responsive for mobile
+- [ ] Error handling
 
 ## Others
 

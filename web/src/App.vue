@@ -10,6 +10,8 @@ onMounted(async () => {
   const response = await fetch('/api/todos');
   todos.value = await response.json();
 });
+
+// TODO: Uppon submit, should refresh
 </script>
 
 <template>
@@ -28,7 +30,7 @@ onMounted(async () => {
       <div class="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-500">
         Filter shortcuts
       </div>
-      <AddItem />
+      <AddItem @submit="todos.push($event)" />
     </div>
 
     <main class="flex-1 overflow-y-auto px-4 py-4">
