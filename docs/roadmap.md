@@ -7,15 +7,20 @@
 
 ## Feature
 
+API:
+
 - [x] Model design
 - [x] Database connection in test
-- [ ] API route and CRUD
+- [x] API route and CRUD
   + [x] create
   + [x] list
   + [x] show
-  + [ ] update
-  + [ ] delete
+  + [x] update
+  + [x] delete
+  + [x] error handling
 
+
+Web:
+- [ ] Initial page
 
 ## Others
-- [ ] error handling
