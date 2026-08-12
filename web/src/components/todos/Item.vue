@@ -1,27 +1,53 @@
 <script setup lang="ts">
 import { ref } from 'vue';
+import { Pencil } from '@lucide/vue';
 import type { TodoItem } from '@/types/todo';
+import FormModal from '@/components/todos/FormModal.vue';
 
 defineProps<{ todo: TodoItem }>();
 
+const emit = defineEmits<{
+  submit: [todo: TodoItem];
+}>();
+
 const expanded = ref(false);
+const showEditModal = ref(false);
+
+function handleSubmit(todo: TodoItem) {
+  showEditModal.value = false;
+  emit('submit', todo);
+}
 </script>
 
 <template>
   <li class="px-3 py-2">
-    <button
-      type="button"
-      class="flex w-full items-center gap-2 text-left"
-      @click="expanded = !expanded"
-    >
-      <span class="inline-block transition-transform" :class="{ 'rotate-90': expanded }">></span>
-      {{ todo.name }}
-    </button>
+    <div class="flex items-center gap-2">
+      <button
+        type="button"
+        class="flex flex-1 items-center gap-2 text-left"
+        @click="expanded = !expanded"
+      >
+        <span class="inline-block transition-transform" :class="{ 'rotate-90': expanded }"
+          >></span
+        >
+        {{ todo.name }}
+      </button>
+      <button type="button" aria-label="Edit" class="text-gray-500" @click="showEditModal = true">
+        <Pencil class="h-4 w-4" />
+      </button>
+    </div>
 
     <div v-if="expanded" class="mt-2 text-sm text-gray-500">
       <p v-if="todo.description">{{ todo.description }}</p>
       <p>Status: {{ todo.status }}</p>
       <p v-if="todo.priority">Priority: {{ todo.priority }}</p>
     </div>
+
+    <FormModal
+      v-if="showEditModal"
+      :todo="todo"
+      @close="showEditModal = false"
+      @submit="handleSubmit"
+    />
   </li>
 </template>

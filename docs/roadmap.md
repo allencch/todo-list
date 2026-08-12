@@ -35,3 +35,4 @@ Web:
 - [ ] org-mode import/export
 - [ ] Frontend dark/light theme toggle
 - [ ] Time level
+- [ ] Web socket? Update content with PUSH

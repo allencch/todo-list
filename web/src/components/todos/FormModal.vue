@@ -2,17 +2,22 @@
 import { ref } from 'vue';
 import type { TodoItem } from '@/types/todo';
 
+const props = defineProps<{ todo?: TodoItem }>();
+
 const emit = defineEmits<{
   close: [];
   submit: [todo: TodoItem];
 }>();
 
-const name = ref('');
-const description = ref('');
+const todoId = ref(props.todo?.id ?? null);
+const name = ref(props.todo?.name ?? '');
+const description = ref(props.todo?.description ?? '');
 const dueDate = ref('');
-const priority = ref<'low' | 'medium' | 'high' | ''>('');
+const priority = ref<'low' | 'medium' | 'high' | ''>(
+  (props.todo?.priority as 'low' | 'medium' | 'high') ?? '',
+);
 
-async function handleSubmit() {
+async function createTodo() {
   const response = await fetch('/api/todos', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -24,7 +29,32 @@ async function handleSubmit() {
     }),
   });
 
-  const todo = await response.json();
+  return response.json();
+}
+
+async function patchTodo() {
+  const response = await fetch(`/api/todos/${todoId.value}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      name: name.value,
+      description: description.value || undefined,
+      dueDate: dueDate.value || undefined,
+      priority: priority.value || undefined,
+    }),
+  });
+
+  return response.json();
+}
+
+async function handleSubmit() {
+  let result;
+  if (todoId.value) {
+    result = await patchTodo();
+  } else {
+    result = await createTodo();
+  }
+  const todo = result;
   emit('submit', todo);
 }
 </script>
@@ -35,7 +65,7 @@ async function handleSubmit() {
     @click.self="emit('close')"
   >
     <div class="w-full max-w-sm rounded-md bg-white p-4">
-      <h2 class="mb-3 text-lg font-medium">New todo</h2>
+      <h2 class="mb-3 text-lg font-medium">{{ todo ? 'Edit todo' : 'New todo' }}</h2>
 
       <form class="flex flex-col gap-3" @submit.prevent="handleSubmit">
         <input
@@ -71,7 +101,7 @@ async function handleSubmit() {
             Cancel
           </button>
           <button type="submit" class="rounded-md border border-gray-300 px-3 py-2">
-            Create
+            {{ todo ? 'Save' : 'Create' }}
           </button>
         </div>
       </form>

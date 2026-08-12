@@ -11,7 +11,12 @@ onMounted(async () => {
   todos.value = await response.json();
 });
 
-// TODO: Uppon submit, should refresh
+function handleUpdate(todo: TodoItem) {
+  const index = todos.value.findIndex((item) => item.id === todo.id);
+  if (index !== -1) {
+    todos.value[index] = todo;
+  }
+}
 </script>
 
 <template>
@@ -35,7 +40,7 @@ onMounted(async () => {
 
     <main class="flex-1 overflow-y-auto px-4 py-4">
       <ul class="divide-y divide-gray-200 rounded-md border border-gray-300">
-        <Item :todo="todo" v-for="todo in todos" :key="todo.id" />
+        <Item :todo="todo" v-for="todo in todos" :key="todo.id" @submit="handleUpdate" />
       </ul>
     </main>
   </div>
