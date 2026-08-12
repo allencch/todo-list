@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import type { TodoItem } from '@/types/todo';
+import ErrorModal from '@/components/shared/ErrorModal.vue';
 
 const props = defineProps<{ todo?: TodoItem }>();
 
@@ -17,8 +18,11 @@ const priority = ref<'low' | 'medium' | 'high' | ''>(
   (props.todo?.priority as 'low' | 'medium' | 'high') ?? '',
 );
 
+const showErrorModal = ref(false);
+const errorMessage = ref('');
+
 async function createTodo() {
-  const response = await fetch('/api/todos', {
+  return fetch('/api/todos', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -28,12 +32,10 @@ async function createTodo() {
       priority: priority.value || undefined,
     }),
   });
-
-  return response.json();
 }
 
 async function patchTodo() {
-  const response = await fetch(`/api/todos/${todoId.value}`, {
+  return fetch(`/api/todos/${todoId.value}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -43,19 +45,31 @@ async function patchTodo() {
       priority: priority.value || undefined,
     }),
   });
+}
 
-  return response.json();
+function buildErrorMessage(body) {
+  if (typeof body.error === 'string') {
+    return body.error;
+  }
+
+  return (
+    Object.entries(body.error?.fieldErrors ?? {})
+      .map(([key, value]) => `${key}: ${value}`)
+      .join('; ') || 'Something went wrong.'
+  );
 }
 
 async function handleSubmit() {
-  let result;
-  if (todoId.value) {
-    result = await patchTodo();
-  } else {
-    result = await createTodo();
+  const response = todoId.value ? await patchTodo() : await createTodo();
+  const body = await response.json();
+
+  if (!response.ok) {
+    errorMessage.value = buildErrorMessage(body);
+    showErrorModal.value = true;
+    return;
   }
-  const todo = result;
-  emit('submit', todo);
+
+  emit('submit', body);
 }
 </script>
 
@@ -107,4 +121,10 @@ async function handleSubmit() {
       </form>
     </div>
   </div>
+
+  <ErrorModal
+    v-if="showErrorModal"
+    :message="errorMessage"
+    @close="showErrorModal = false"
+  />
 </template>
