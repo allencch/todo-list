@@ -9,6 +9,7 @@ import {
   pgEnum,
   uniqueIndex,
   index,
+  jsonb,
 } from 'drizzle-orm/pg-core';
 import { relations, InferSelectModel, InferInsertModel } from 'drizzle-orm';
 
@@ -22,6 +23,8 @@ export const todoItems = pgTable('todo_items', {
   dueDate: timestamp(null),
   status: statusEnum('status').default('not_started').notNull(),
   priority: priorityEnum('priority'),
+  isAllDay: boolean('is_all_day').default(true).notNull(),
+  meta: jsonb('meta').default({}).notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at')
     .defaultNow()

@@ -8,6 +8,13 @@
       "when": 1786473229496,
       "tag": "0000_mighty_doorman",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1786529061557,
+      "tag": "0001_soft_drax",
+      "breakpoints": true
     }
   ]
 }
