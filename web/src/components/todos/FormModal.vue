@@ -1,16 +1,10 @@
 <script setup lang="ts">
 import { ref } from 'vue';
+import type { TodoItem } from '@/types/todo';
 
 const emit = defineEmits<{
   close: [];
-  submit: [
-    payload: {
-      name: string;
-      description?: string;
-      dueDate?: string;
-      priority?: 'low' | 'medium' | 'high';
-    },
-  ];
+  submit: [todo: TodoItem];
 }>();
 
 const name = ref('');
@@ -18,13 +12,20 @@ const description = ref('');
 const dueDate = ref('');
 const priority = ref<'low' | 'medium' | 'high' | ''>('');
 
-function handleSubmit() {
-  emit('submit', {
-    name: name.value,
-    description: description.value || undefined,
-    dueDate: dueDate.value || undefined,
-    priority: priority.value || undefined,
+async function handleSubmit() {
+  const response = await fetch('/api/todos', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      name: name.value,
+      description: description.value || undefined,
+      dueDate: dueDate.value || undefined,
+      priority: priority.value || undefined,
+    }),
   });
+
+  const todo = await response.json();
+  emit('submit', todo);
 }
 </script>
 
