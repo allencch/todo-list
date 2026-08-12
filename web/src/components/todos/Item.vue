@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue';
-import { Pencil } from '@lucide/vue';
+import { Pencil, ChevronRight } from '@lucide/vue';
 import type { TodoItem } from '@/types/todo';
 import FormModal from '@/components/todos/FormModal.vue';
 
@@ -28,7 +28,7 @@ function handleSubmit(todo: TodoItem) {
         @click="expanded = !expanded"
       >
         <span class="inline-block transition-transform" :class="{ 'rotate-90': expanded }"
-          >></span
+          ><ChevronRight class="h-4 w-4" /></span
         >
         {{ todo.name }}
       </button>
