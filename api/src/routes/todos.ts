@@ -33,10 +33,16 @@ async function listTodos(request, reply) {
 
 async function getTodo(request, reply) {
   const { id } = request.params;
+  const todoId = Number(id);
+  if (!Number.isInteger(todoId)) {
+    reply.code(400);
+    return { error: 'Invalid id' };
+  }
+
   const [todo] = await db
     .select()
     .from(todoItems)
-    .where(eq(todoItems.id, Number(id)));
+    .where(eq(todoItems.id, todoId));
   if (!todo) {
     reply.code(404);
     return { error: 'Todo not found' };
@@ -53,10 +59,16 @@ async function updateTodo(request, reply) {
   }
 
   const { id } = request.params;
+  const todoId = Number(id);
+  if (!Number.isInteger(todoId)) {
+    reply.code(400);
+    return { error: 'Invalid id' };
+  }
+
   const [todo] = await db
     .update(todoItems)
     .set(parsed.data)
-    .where(eq(todoItems.id, Number(id)))
+    .where(eq(todoItems.id, todoId))
     .returning();
 
   if (!todo) {
@@ -70,15 +82,18 @@ async function updateTodo(request, reply) {
 
 async function deleteTodo(request, reply) {
   const { id } = request.params;
-  const [todo] = await db
-    .select()
-    .from(todoItems)
-    .where(eq(todoItems.id, Number(id)));
+  const todoId = Number(id);
+  if (!Number.isInteger(todoId)) {
+    reply.code(400);
+    return { error: 'Invalid id' };
+  }
+
+  const [todo] = await db.select().from(todoItems).where(eq(todoItems.id, todoId));
   if (!todo) {
     reply.code(404);
     return { error: 'Todo not found' };
   }
-  await db.delete(todoItems).where(eq(todoItems.id, Number(id)));
+  await db.delete(todoItems).where(eq(todoItems.id, todoId));
   return reply.status(204).send();
 }
 
