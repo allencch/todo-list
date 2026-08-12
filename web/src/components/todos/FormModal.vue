@@ -2,6 +2,7 @@
 import { ref } from 'vue';
 import type { TodoItem } from '@/types/todo';
 import ErrorModal from '@/components/shared/ErrorModal.vue';
+import { safeParseJson, buildErrorMessage } from '@/utils/http';
 
 const props = defineProps<{ todo?: TodoItem }>();
 
@@ -47,29 +48,18 @@ function patchTodo() {
   });
 }
 
-function buildErrorMessage(body) {
-  if (typeof body.error === 'string') {
-    return body.error;
-  }
-
-  return (
-    Object.entries(body.error?.fieldErrors ?? {})
-      .map(([key, value]) => `${key}: ${value}`)
-      .join('; ') || 'Something went wrong.'
-  );
-}
-
 async function handleSubmit() {
   const response = todoId.value ? await patchTodo() : await createTodo();
-  const body = await response.json();
 
   if (!response.ok) {
+    const body = await safeParseJson(response);
     errorMessage.value = buildErrorMessage(body);
     showErrorModal.value = true;
     return;
   }
 
-  emit('submit', body);
+  const todo = await response.json();
+  emit('submit', todo);
 }
 </script>
 
