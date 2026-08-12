@@ -10,3 +10,12 @@
 - [x] Model design
 - [x] Database connection in test
 - [ ] API route and CRUD
+  + [x] create
+  + [x] list
+  + [ ] show
+  + [ ] update
+  + [ ] delete
+
+
+## Others
+- [ ] error handling
