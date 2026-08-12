@@ -1,10 +1,10 @@
 import Fastify from 'fastify';
 import 'dotenv/config';
 import { z } from 'zod';
-import { db } from './db';
-import { todoItems } from './db/schema';
+import { db } from '@/db/client';
+import { todoItems } from '@/db/schema';
 
-const fastify = Fastify({ logger: true });
+export const fastify = Fastify({ logger: true });
 
 const createTodoSchema = z.object({
   name: z.string().min(1),
@@ -38,4 +38,6 @@ const start = async () => {
   }
 };
 
-start();
+if (import.meta.url === `file://${process.argv[1]}`) {
+  start();
+}
