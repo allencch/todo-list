@@ -2,7 +2,7 @@ import Fastify from 'fastify';
 import 'dotenv/config';
 import apiRoutes from './routes'
 
-export const fastify = Fastify({ logger: true });
+export const fastify = Fastify({ logger: process.env.NODE_ENV !== 'test' });
 
 
 fastify.get('/api/health', async () => {
