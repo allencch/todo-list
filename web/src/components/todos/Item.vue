@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue';
-import { Pencil, ChevronRight } from '@lucide/vue';
+import { Pencil, ChevronRight, Trash2 } from '@lucide/vue';
 import type { TodoItem } from '@/types/todo';
 import FormModal from '@/components/todos/FormModal.vue';
 
@@ -24,7 +24,7 @@ function handleSubmit(todo: TodoItem) {
     <div class="flex items-center gap-2">
       <button
         type="button"
-        class="flex flex-1 items-center gap-2 text-left"
+        class="flex flex-1 cursor-pointer items-center gap-2 text-left"
         @click="expanded = !expanded"
       >
         <span class="inline-block transition-transform" :class="{ 'rotate-90': expanded }"
@@ -32,9 +32,19 @@ function handleSubmit(todo: TodoItem) {
         >
         {{ todo.name }}
       </button>
-      <button type="button" aria-label="Edit" class="text-gray-500" @click="showEditModal = true">
-        <Pencil class="h-4 w-4" />
-      </button>
+      <div class="flex items-center gap-2">
+        <button
+          type="button"
+          aria-label="Edit"
+          class="cursor-pointer text-gray-500"
+          @click="showEditModal = true"
+        >
+          <Pencil class="h-4 w-4" />
+        </button>
+        <button type="button" aria-label="Delete" class="cursor-pointer text-red-500">
+          <Trash2 class="h-4 w-4" />
+        </button>
+      </div>
     </div>
 
     <div v-if="expanded" class="mt-2 text-sm text-gray-500">
