@@ -1,13 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-
-interface TodoItem {
-  id: number;
-  name: string;
-  description?: string | null;
-  status: string;
-  priority?: string | null;
-}
+import Item from '@/components/todos/Item.vue';
+import type { TodoItem } from '@/types/todo';
 
 const todos = ref<TodoItem[]>([]);
 
@@ -37,9 +31,7 @@ onMounted(async () => {
 
     <main class="flex-1 overflow-y-auto px-4 py-4">
       <ul class="divide-y divide-gray-200 rounded-md border border-gray-300">
-        <li v-for="todo in todos" :key="todo.id" class="px-3 py-2">
-          {{ todo.name }}
-        </li>
+        <Item :todo="todo" v-for="todo in todos" :key="todo.id" />
       </ul>
     </main>
   </div>
