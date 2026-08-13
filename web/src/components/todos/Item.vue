@@ -176,7 +176,10 @@ async function changePriority(priority: string | null) {
     </div>
 
     <div v-if="expanded" class="mt-2 text-sm text-gray-500">
-      <p v-if="todo.description">{{ todo.description }}</p>
+      <p v-if="todo.description">
+        {{ todo.description }}
+        <hr class="my-2" />
+      </p>
       <p v-if="todo.recurType">{{ recurLabel(todo.recurType, todo.recurValue ?? 1) }}</p>
       <p v-if="todo.nextDueDate">Next: {{ new Date(todo.nextDueDate).toLocaleDateString() }}</p>
       <div class="mt-1 flex flex-wrap gap-1">

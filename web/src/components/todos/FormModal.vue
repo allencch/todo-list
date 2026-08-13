@@ -76,7 +76,7 @@ async function handleSubmit() {
     class="fixed inset-0 flex items-center justify-center bg-black/50"
     @click.self="emit('close')"
   >
-    <div class="w-full max-w-sm rounded-md bg-white p-4">
+    <div class="w-full max-w-lg rounded-md bg-white p-4">
       <h2 class="mb-3 text-lg font-medium">{{ todo ? 'Edit todo' : 'New todo' }}</h2>
 
       <form class="flex flex-col gap-3" @submit.prevent="handleSubmit">
@@ -91,6 +91,7 @@ async function handleSubmit() {
           v-model="description"
           placeholder="Description"
           class="rounded-md border border-gray-300 px-3 py-2"
+          rows="6"
         ></textarea>
         <input
           v-model="dueDate"
