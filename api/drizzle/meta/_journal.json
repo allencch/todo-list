@@ -15,6 +15,13 @@
       "when": 1786529061557,
       "tag": "0001_soft_drax",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1786585739132,
+      "tag": "0002_hot_victor_mancha",
+      "breakpoints": true
     }
   ]
 }
