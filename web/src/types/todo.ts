@@ -7,4 +7,5 @@ export interface TodoItem {
   priority?: string | null;
   recurType?: string | null;
   recurValue?: number | null;
+  nextDueDate?: string | null;
 }

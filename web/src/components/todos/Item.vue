@@ -1,6 +1,16 @@
 <script setup lang="ts">
 import { ref } from 'vue';
-import { Pencil, ChevronRight, Trash2, Flag, Circle, CircleDot, CircleCheck, Archive } from '@lucide/vue';
+import {
+  Pencil,
+  ChevronRight,
+  Trash2,
+  Flag,
+  Circle,
+  CircleDot,
+  CircleCheck,
+  Archive,
+  Repeat,
+} from '@lucide/vue';
 import type { TodoItem } from '@/types/todo';
 import FormModal from './FormModal.vue';
 import DeleteModal from './DeleteModal.vue';
@@ -35,6 +45,18 @@ const statusColors: Record<string, string> = {
 function humanize(value: string) {
   const words = value.replace(/_/g, ' ');
   return words.charAt(0).toUpperCase() + words.slice(1);
+}
+
+const recurUnitNouns: Record<string, string> = {
+  daily: 'day',
+  weekly: 'week',
+  monthly: 'month',
+  yearly: 'year',
+};
+
+function recurLabel(recurType: string, recurValue: number) {
+  const unit = recurUnitNouns[recurType] ?? recurType;
+  return `Repeat every ${recurValue} ${unit}${recurValue === 1 ? '' : 's'}`;
 }
 
 const emit = defineEmits<{
@@ -121,6 +143,7 @@ async function changePriority(priority: string | null) {
         <Flag v-if="todo.priority" class="h-4 w-4" :class="priorityColors[todo.priority]" />
         {{ todo.name }}
       </button>
+      <Repeat v-if="todo.recurType" class="h-4 w-4 shrink-0 text-gray-400" />
       <span v-if="todo.dueDate" class="shrink-0 text-sm text-gray-500">
         {{ new Date(todo.dueDate).toLocaleDateString() }}
       </span>
@@ -141,6 +164,8 @@ async function changePriority(priority: string | null) {
 
     <div v-if="expanded" class="mt-2 text-sm text-gray-500">
       <p v-if="todo.description">{{ todo.description }}</p>
+      <p v-if="todo.recurType">{{ recurLabel(todo.recurType, todo.recurValue ?? 1) }}</p>
+      <p v-if="todo.nextDueDate">Next: {{ new Date(todo.nextDueDate).toLocaleDateString() }}</p>
       <div class="mt-1 flex flex-wrap gap-1">
         <button
           v-for="status in statuses"
