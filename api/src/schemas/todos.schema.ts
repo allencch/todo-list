@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { CustomRecurrence } from '@/modules/todo.types.ts';
+import { CustomRecurrence } from '@/types/todos.type.ts';
 
 export const customRecurrenceSchema: z.ZodType<CustomRecurrence> = z.discriminatedUnion('type', [
   z.object({
