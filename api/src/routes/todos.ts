@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { eq } from 'drizzle-orm';
 import { todoItems } from '@/db/schema';
 import { db } from '@/db/client';
+import { completeTodo } from '@/services/todo.service';
 
 const createTodoSchema = z.object({
   name: z.string().min(1),
@@ -97,12 +98,37 @@ async function deleteTodo(request, reply) {
   return reply.status(204).send();
 }
 
+async function postCompleteTodo(request, reply) {
+  const { id } = request.params;
+  const todoId = Number(id);
+  if (!Number.isInteger(todoId)) {
+    reply.code(400);
+    return { error: 'Invalid id' };
+  }
+  const [todo] = await db.select().from(todoItems).where(eq(todoItems.id, todoId));
+  if (!todo) {
+    reply.code(404);
+    return { error: 'Todo not found' };
+  }
+
+  if (todo.status === 'completed') {
+    // Do nothing
+    reply.code(200);
+    return todo;
+  }
+
+  const updated = await completeTodo(todo);
+  reply.code(200);
+  return updated;
+}
+
 async function todoRoutes(fastify, options) {
   fastify.get('', listTodos);
   fastify.get('/:id', getTodo);
   fastify.post('', createTodo);
   fastify.patch('/:id', updateTodo);
   fastify.delete('/:id', deleteTodo);
+  fastify.post('/:id/complete', postCompleteTodo);
 }
 
 export { todoRoutes };

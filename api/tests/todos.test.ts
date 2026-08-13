@@ -107,3 +107,32 @@ describe('DELETE /api/todos/:id', () => {
     expect(found).toBeUndefined();
   });
 });
+
+describe('POST /api/todos/:id/complete', () => {
+  it('mark the todo to complete and create new recurring todo', async () => {
+    const [seeded] = await db
+      .insert(todoItems)
+      .values({
+        name: 'Daily todo',
+        recurType: 'daily',
+        dueDate: new Date('2026-01-01T00:00:00.000Z'),
+      })
+      .returning();
+
+    const response = await fastify.inject({
+      method: 'POST',
+      url: `/api/todos/${seeded.id}/complete`,
+    });
+
+    expect(response.statusCode).toBe(200);
+    const body = response.json();
+    expect(body.status).toBe('completed');
+
+    const [child] = await db.select().from(todoItems).where(eq(todoItems.parentId, seeded.id));
+    expect(child).toBeDefined();
+    expect(child.name).toBe('Daily todo');
+
+    await db.delete(todoItems).where(eq(todoItems.id, child.id));
+    await db.delete(todoItems).where(eq(todoItems.id, seeded.id));
+  });
+});
