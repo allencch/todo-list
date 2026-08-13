@@ -2,6 +2,7 @@
 import { ref, computed } from 'vue';
 import type { TodoItem } from '@/types/todo';
 import ErrorModal from '@/components/shared/ErrorModal.vue';
+import DaySelection from './DaySelection.vue';
 import { safeParseJson, buildErrorMessage } from '@/utils/http';
 
 const props = defineProps<{ todo?: TodoItem }>();
@@ -24,6 +25,9 @@ const recurType = ref<'daily' | 'weekly' | 'monthly' | 'yearly' | 'custom' | ''>
 const recurValue = ref(props.todo?.recurValue ?? 1);
 
 const weekdayLabels = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+const weekdayValues = [0, 1, 2, 3, 4, 5, 6];
+const monthDayValues = Array.from({ length: 31 }, (_, i) => i + 1);
+
 const customBasis = ref<'weekly' | 'monthly'>(props.todo?.recurCustom?.type ?? 'weekly');
 const customWeekdays = ref<number[]>(
   props.todo?.recurCustom?.type === 'weekly' ? [...props.todo.recurCustom.weekdays] : [],
@@ -39,24 +43,6 @@ const isCustomRecurrenceIncomplete = computed(() => {
       (customBasis.value === 'monthly' && customMonthDays.value.length === 0))
   );
 });
-
-function toggleWeekday(day: number) {
-  const index = customWeekdays.value.indexOf(day);
-  if (index === -1) {
-    customWeekdays.value.push(day);
-  } else {
-    customWeekdays.value.splice(index, 1);
-  }
-}
-
-function toggleMonthDay(day: number) {
-  const index = customMonthDays.value.indexOf(day);
-  if (index === -1) {
-    customMonthDays.value.push(day);
-  } else {
-    customMonthDays.value.splice(index, 1);
-  }
-}
 
 const showErrorModal = ref(false);
 const errorMessage = ref('');
@@ -183,39 +169,13 @@ async function handleSubmit() {
               <option value="monthly">Monthly</option>
             </select>
 
-            <div v-if="customBasis === 'weekly'" class="flex gap-1">
-              <button
-                v-for="(label, day) in weekdayLabels"
-                :key="day"
-                type="button"
-                class="h-8 w-8 cursor-pointer rounded-full border text-xs"
-                :class="
-                  customWeekdays.includes(day)
-                    ? 'border-blue-400 bg-blue-100 font-medium text-blue-700'
-                    : 'border-gray-200 text-gray-500'
-                "
-                @click="toggleWeekday(day)"
-              >
-                {{ label }}
-              </button>
-            </div>
-
-            <div v-else class="grid grid-cols-7 gap-1">
-              <button
-                v-for="day in 31"
-                :key="day"
-                type="button"
-                class="h-8 w-8 cursor-pointer rounded-md border text-xs"
-                :class="
-                  customMonthDays.includes(day)
-                    ? 'border-blue-400 bg-blue-100 font-medium text-blue-700'
-                    : 'border-gray-200 text-gray-500'
-                "
-                @click="toggleMonthDay(day)"
-              >
-                {{ day }}
-              </button>
-            </div>
+            <DaySelection
+              v-if="customBasis === 'weekly'"
+              v-model="customWeekdays"
+              :days="weekdayValues"
+              :labels="weekdayLabels"
+            />
+            <DaySelection v-else v-model="customMonthDays" :days="monthDayValues" shape="square" />
           </div>
         </div>
 
