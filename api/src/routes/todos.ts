@@ -1,8 +1,12 @@
-import { eq, desc, inArray } from 'drizzle-orm';
+import { eq, desc, inArray, and, or, ilike, gte, lte } from 'drizzle-orm';
 import { todoItems } from '@/db/schema';
 import { db } from '@/db/client';
 import { completeTodo } from '@/services/todo.service';
-import { createTodoSchema, updateTodoSchema } from '@/schemas/todos.schema.js';
+import {
+  createTodoSchema,
+  updateTodoSchema,
+  listTodosQuerySchema,
+} from '@/schemas/todos.schema.js';
 
 async function attachNextDueDates(todos) {
   const completedIds = todos.filter((todo) => todo.status === 'completed').map((todo) => todo.id);
@@ -34,9 +38,37 @@ async function createTodo(request, reply) {
   return todo;
 }
 
-// TODO: Add pagination, sorting, filtering
+// TODO: Add pagination
+// TODO: sort by due date, priority, status, name
 async function listTodos(request, reply) {
-  const todos = await db.select().from(todoItems).orderBy(desc(todoItems.id));
+  const parsed = listTodosQuerySchema.safeParse(request.query);
+  if (!parsed.success) {
+    reply.code(400);
+    return { error: parsed.error.flatten() };
+  }
+
+  const { status, priority, content, dueDateMin, dueDateMax } = parsed.data;
+
+  const conditions = [];
+  if (status) conditions.push(eq(todoItems.status, status));
+  if (priority) conditions.push(eq(todoItems.priority, priority));
+  if (content) {
+    conditions.push(
+      or(
+        ilike(todoItems.name, `%${content}%`),
+        ilike(todoItems.description, `%${content}%`)
+      )
+    );
+  }
+  if (dueDateMin) conditions.push(gte(todoItems.dueDate, dueDateMin));
+  if (dueDateMax) conditions.push(lte(todoItems.dueDate, dueDateMax));
+
+  const todos = await db
+    .select()
+    .from(todoItems)
+    .where(conditions.length > 0 ? and(...conditions) : undefined)
+    .orderBy(desc(todoItems.id));
+
   reply.code(200);
   return attachNextDueDates(todos);
 }

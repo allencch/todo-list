@@ -44,3 +44,11 @@ export const updateTodoSchema = baseTodoSchema
     message: 'recurCustom is required when recurType is custom',
     path: ['recurCustom'],
   });
+
+export const listTodosQuerySchema = z.object({
+  status: z.enum(['not_started', 'in_progress', 'completed', 'archived']).optional(),
+  priority: z.enum(['low', 'medium', 'high']).optional(),
+  content: z.string().optional(),
+  dueDateMin: z.coerce.date().optional(),
+  dueDateMax: z.coerce.date().optional(),
+});

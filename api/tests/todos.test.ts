@@ -22,6 +22,100 @@ describe('GET /api/todos', () => {
 
     await db.delete(todoItems).where(eq(todoItems.id, seeded.id));
   });
+
+  it('filters by status', async () => {
+    const [matching] = await db
+      .insert(todoItems)
+      .values({ name: 'Filter status match', status: 'completed' })
+      .returning();
+    const [nonMatching] = await db
+      .insert(todoItems)
+      .values({ name: 'Filter status no match', status: 'not_started' })
+      .returning();
+
+    const response = await fastify.inject({
+      method: 'GET',
+      url: '/api/todos',
+      query: { status: 'completed' },
+    });
+
+    expect(response.statusCode).toBe(200);
+    const ids = response.json().map((todo) => todo.id);
+    expect(ids).toContain(matching.id);
+    expect(ids).not.toContain(nonMatching.id);
+
+    await db.delete(todoItems).where(eq(todoItems.id, matching.id));
+    await db.delete(todoItems).where(eq(todoItems.id, nonMatching.id));
+  });
+
+  it('filters by priority', async () => {
+    const [matching] = await db
+      .insert(todoItems)
+      .values({ name: 'Filter priority match', priority: 'high' })
+      .returning();
+    const [nonMatching] = await db
+      .insert(todoItems)
+      .values({ name: 'Filter priority no match', priority: 'low' })
+      .returning();
+
+    const response = await fastify.inject({
+      method: 'GET',
+      url: '/api/todos',
+      query: { priority: 'high' },
+    });
+
+    expect(response.statusCode).toBe(200);
+    const ids = response.json().map((todo) => todo.id);
+    expect(ids).toContain(matching.id);
+    expect(ids).not.toContain(nonMatching.id);
+
+    await db.delete(todoItems).where(eq(todoItems.id, matching.id));
+    await db.delete(todoItems).where(eq(todoItems.id, nonMatching.id));
+  });
+
+  it('filters by content (partial, case-insensitive)', async () => {
+    const [matching] = await db.insert(todoItems).values({ name: 'Buy Groceries' }).returning();
+    const [nonMatching] = await db.insert(todoItems).values({ name: 'Walk the dog' }).returning();
+
+    const response = await fastify.inject({
+      method: 'GET',
+      url: '/api/todos',
+      query: { content: 'groceries' },
+    });
+
+    expect(response.statusCode).toBe(200);
+    const ids = response.json().map((todo) => todo.id);
+    expect(ids).toContain(matching.id);
+    expect(ids).not.toContain(nonMatching.id);
+
+    await db.delete(todoItems).where(eq(todoItems.id, matching.id));
+    await db.delete(todoItems).where(eq(todoItems.id, nonMatching.id));
+  });
+
+  it('filters by due date range', async () => {
+    const [matching] = await db
+      .insert(todoItems)
+      .values({ name: 'Due in range', dueDate: new Date('2026-03-10T00:00:00.000Z') })
+      .returning();
+    const [nonMatching] = await db
+      .insert(todoItems)
+      .values({ name: 'Due out of range', dueDate: new Date('2026-04-10T00:00:00.000Z') })
+      .returning();
+
+    const response = await fastify.inject({
+      method: 'GET',
+      url: '/api/todos',
+      query: { dueDateMin: '2026-03-01', dueDateMax: '2026-03-31' },
+    });
+
+    expect(response.statusCode).toBe(200);
+    const ids = response.json().map((todo) => todo.id);
+    expect(ids).toContain(matching.id);
+    expect(ids).not.toContain(nonMatching.id);
+
+    await db.delete(todoItems).where(eq(todoItems.id, matching.id));
+    await db.delete(todoItems).where(eq(todoItems.id, nonMatching.id));
+  });
 });
 
 describe('GET /api/todos/:id', () => {
