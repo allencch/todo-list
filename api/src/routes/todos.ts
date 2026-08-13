@@ -1,8 +1,26 @@
 import { z } from 'zod';
-import { eq, desc } from 'drizzle-orm';
+import { eq, desc, inArray } from 'drizzle-orm';
 import { todoItems } from '@/db/schema';
 import { db } from '@/db/client';
 import { completeTodo } from '@/services/todo.service';
+
+async function attachNextDueDates(todos) {
+  const completedIds = todos.filter((todo) => todo.status === 'completed').map((todo) => todo.id);
+  if (completedIds.length === 0) {
+    return todos.map((todo) => ({ ...todo, nextDueDate: null }));
+  }
+
+  const children = await db
+    .select()
+    .from(todoItems)
+    .where(inArray(todoItems.parentId, completedIds));
+  const nextDueDateByParentId = new Map(children.map((child) => [child.parentId, child.dueDate]));
+
+  return todos.map((todo) => ({
+    ...todo,
+    nextDueDate: nextDueDateByParentId.get(todo.id) ?? null,
+  }));
+}
 
 const createTodoSchema = z.object({
   name: z.string().min(1),
@@ -34,7 +52,7 @@ async function createTodo(request, reply) {
 async function listTodos(request, reply) {
   const todos = await db.select().from(todoItems).orderBy(desc(todoItems.id));
   reply.code(200);
-  return todos;
+  return attachNextDueDates(todos);
 }
 
 async function getTodo(request, reply) {
@@ -54,7 +72,8 @@ async function getTodo(request, reply) {
     return { error: 'Todo not found' };
   }
   reply.code(200);
-  return todo;
+  const [withNextDueDate] = await attachNextDueDates([todo]);
+  return withNextDueDate;
 }
 
 async function updateTodo(request, reply) {
@@ -124,7 +143,8 @@ async function postCompleteTodo(request, reply) {
 
   const updated = await completeTodo(todo);
   reply.code(200);
-  return updated;
+  const [withNextDueDate] = await attachNextDueDates([updated]);
+  return withNextDueDate;
 }
 
 async function todoRoutes(fastify, options) {
