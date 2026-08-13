@@ -19,7 +19,7 @@ import { safeParseJson, buildErrorMessage } from '@/utils/http';
 
 const props = defineProps<{ todo: TodoItem }>();
 
-const statuses = ['not_started', 'in_progress', 'completed', 'archived'];
+const statuses = ['not_started', 'in_progress', 'archived'];
 const priorities: (string | null)[] = [null, 'low', 'medium', 'high'];
 
 const priorityColors: Record<string, string> = {
@@ -62,6 +62,7 @@ function recurLabel(recurType: string, recurValue: number) {
 const emit = defineEmits<{
   submit: [todo: TodoItem];
   delete: [todo: TodoItem];
+  complete: [];
 }>();
 
 const expanded = ref(false);
@@ -99,8 +100,17 @@ async function changeStatus(status: string) {
     return;
   }
 
+  if (status === 'completed') {
+    emit('complete');
+    return;
+  }
+
   const todo = await response.json();
   emit('submit', todo);
+}
+
+function toggleComplete() {
+  changeStatus(props.todo.status === 'completed' ? 'not_started' : 'completed');
 }
 
 async function changePriority(priority: string | null) {
@@ -143,10 +153,13 @@ async function changePriority(priority: string | null) {
         <Flag v-if="todo.priority" class="h-4 w-4" :class="priorityColors[todo.priority]" />
         {{ todo.name }}
       </button>
-      <Repeat v-if="todo.recurType" class="h-4 w-4 shrink-0 text-gray-400" />
-      <span v-if="todo.dueDate" class="shrink-0 text-sm text-gray-500">
-        {{ new Date(todo.dueDate).toLocaleDateString() }}
-      </span>
+      <div
+        v-if="todo.recurType || todo.dueDate"
+        class="flex shrink-0 items-center gap-1 text-sm text-gray-500"
+      >
+        <Repeat v-if="todo.recurType" class="h-4 w-4 shrink-0 text-gray-400" />
+        <span v-if="todo.dueDate">{{ new Date(todo.dueDate).toLocaleDateString() }}</span>
+      </div>
       <div class="flex items-center gap-2">
         <button
           type="button"
@@ -180,6 +193,18 @@ async function changePriority(priority: string | null) {
           @click="changeStatus(status)"
         >
           {{ humanize(status) }}
+        </button>
+        <button
+          type="button"
+          class="ml-auto cursor-pointer rounded-md border px-2 py-1 text-xs"
+          :class="
+            todo.status === 'completed'
+              ? 'border-green-400 bg-green-100 font-medium text-green-700'
+              : 'border-green-300 text-green-600'
+          "
+          @click="toggleComplete"
+        >
+          Complete
         </button>
       </div>
       <div class="mt-1 flex flex-wrap gap-1">

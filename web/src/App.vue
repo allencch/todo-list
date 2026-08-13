@@ -6,10 +6,12 @@ import type { TodoItem } from '@/types/todo';
 
 const todos = ref<TodoItem[]>([]);
 
-onMounted(async () => {
+async function fetchTodos() {
   const response = await fetch('/api/todos');
   todos.value = await response.json();
-});
+}
+
+onMounted(fetchTodos);
 
 function handleUpdate(todo: TodoItem) {
   const index = todos.value.findIndex((item) => item.id === todo.id);
@@ -47,7 +49,14 @@ function handleDelete(todo: TodoItem) {
 
     <main class="flex-1 overflow-y-auto px-4 py-4">
       <ul class="divide-y divide-gray-200 rounded-md border border-gray-300">
-        <Item :todo="todo" v-for="todo in todos" :key="todo.id" @submit="handleUpdate" @delete="handleDelete" />
+        <Item
+          :todo="todo"
+          v-for="todo in todos"
+          :key="todo.id"
+          @submit="handleUpdate"
+          @delete="handleDelete"
+          @complete="fetchTodos"
+        />
       </ul>
     </main>
   </div>
