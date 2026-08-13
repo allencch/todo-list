@@ -5,4 +5,6 @@ export interface TodoItem {
   dueDate?: string | null;
   status: string;
   priority?: string | null;
+  recurType?: string | null;
+  recurValue?: number | null;
 }

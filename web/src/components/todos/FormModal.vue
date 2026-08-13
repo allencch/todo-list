@@ -18,6 +18,10 @@ const dueDate = ref(props.todo?.dueDate?.slice(0, 10) ?? '');
 const priority = ref<'low' | 'medium' | 'high' | ''>(
   (props.todo?.priority as 'low' | 'medium' | 'high') ?? '',
 );
+const recurType = ref<'daily' | 'weekly' | 'monthly' | 'yearly' | ''>(
+  (props.todo?.recurType as 'daily' | 'weekly' | 'monthly' | 'yearly') ?? '',
+);
+const recurValue = ref(props.todo?.recurValue ?? 1);
 
 const showErrorModal = ref(false);
 const errorMessage = ref('');
@@ -31,6 +35,8 @@ function createTodo() {
       description: description.value || undefined,
       dueDate: dueDate.value || undefined,
       priority: priority.value || undefined,
+      recurType: recurType.value || null,
+      recurValue: recurType.value ? Number(recurValue.value) : null,
     }),
   });
 }
@@ -44,6 +50,8 @@ function patchTodo() {
       description: description.value || undefined,
       dueDate: dueDate.value || undefined,
       priority: priority.value || undefined,
+      recurType: recurType.value || null,
+      recurValue: recurType.value ? Number(recurValue.value) : null,
     }),
   });
 }
@@ -95,6 +103,26 @@ async function handleSubmit() {
           <option value="medium">Medium</option>
           <option value="high">High</option>
         </select>
+
+        <div class="flex gap-2">
+          <select v-model="recurType" class="flex-1 rounded-md border border-gray-300 px-3 py-2">
+            <option value="">Does not repeat</option>
+            <option value="daily">Daily</option>
+            <option value="weekly">Weekly</option>
+            <option value="monthly">Monthly</option>
+            <option value="yearly">Yearly</option>
+          </select>
+          <div v-if="recurType" class="flex items-center gap-2">
+            <span class="text-sm text-gray-500">Every</span>
+            <input
+              v-model.number="recurValue"
+              type="number"
+              min="1"
+              class="w-16 rounded-md border border-gray-300 px-3 py-2"
+            />
+            <span class="text-sm text-gray-500">{{ recurType }}(s)</span>
+          </div>
+        </div>
 
         <div class="mt-2 flex justify-end gap-2">
           <button
