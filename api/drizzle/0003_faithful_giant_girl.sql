@@ -1,0 +1,1 @@
+ALTER TABLE "todo_items" RENAME COLUMN "dueDate" TO "due_date";

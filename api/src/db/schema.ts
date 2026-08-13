@@ -27,7 +27,7 @@ export const todoItems = pgTable(
     id: serial('id').primaryKey(),
     name: varchar('name', { length: 255 }).notNull(),
     description: text('description'),
-    dueDate: timestamp(null),
+    dueDate: timestamp('due_date'),
     status: statusEnum('status').default('not_started').notNull(),
     priority: priorityEnum('priority'),
     isAllDay: boolean('is_all_day').default(true).notNull(),
