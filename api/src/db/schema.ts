@@ -33,6 +33,7 @@ export const todoItems = pgTable(
     isAllDay: boolean('is_all_day').default(true).notNull(),
     meta: jsonb('meta').default({}).notNull(),
     recurType: recurEnum('recur_type'),
+    recurValue: integer('recur_value'),
     recurCustom: jsonb('recur_custom').default({}).notNull(), // TODO: decide the details
     parentId: integer('parent_id').references((): AnyPgColumn => todoItems.id, {
       onDelete: 'set null',

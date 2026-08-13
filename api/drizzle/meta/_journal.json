@@ -36,6 +36,13 @@
       "when": 1786592976780,
       "tag": "0004_colossal_rockslide",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1786593143888,
+      "tag": "0005_legal_vanisher",
+      "breakpoints": true
     }
   ]
 }
