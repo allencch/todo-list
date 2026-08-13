@@ -20,7 +20,7 @@ import { safeParseJson, buildErrorMessage } from '@/utils/http';
 const props = defineProps<{ todo: TodoItem }>();
 
 const statuses = ['not_started', 'in_progress', 'completed', 'archived'];
-const priorities: (string | null)[] = ['low', 'medium', 'high', null];
+const priorities: (string | null)[] = [null, 'low', 'medium', 'high'];
 
 const priorityColors: Record<string, string> = {
   high: 'text-red-500',
