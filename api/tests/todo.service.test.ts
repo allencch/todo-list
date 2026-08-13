@@ -34,4 +34,50 @@ describe('completeTodo', () => {
     await db.delete(todoItems).where(eq(todoItems.id, child.id));
     await db.delete(todoItems).where(eq(todoItems.id, seeded.id));
   });
+
+  it('creates the next occurrence for a custom weekly recurrence', async () => {
+    const dueDate = new Date('2026-01-05T00:00:00.000Z'); // Monday
+    const [seeded] = await db
+      .insert(todoItems)
+      .values({
+        name: 'Custom weekly todo',
+        recurType: 'custom',
+        recurCustom: { type: 'weekly', weekdays: [1, 3, 5] },
+        dueDate,
+      })
+      .returning();
+
+    const result = await completeTodo(seeded);
+    expect(result.status).toBe('completed');
+
+    const [child] = await db.select().from(todoItems).where(eq(todoItems.parentId, seeded.id));
+    expect(child).toBeDefined();
+    expect(new Date(child.dueDate).toISOString()).toBe('2026-01-07T00:00:00.000Z');
+
+    await db.delete(todoItems).where(eq(todoItems.id, child.id));
+    await db.delete(todoItems).where(eq(todoItems.id, seeded.id));
+  });
+
+  it('creates the next occurrence for a custom monthly recurrence', async () => {
+    const dueDate = new Date('2026-01-01T00:00:00.000Z');
+    const [seeded] = await db
+      .insert(todoItems)
+      .values({
+        name: 'Custom monthly todo',
+        recurType: 'custom',
+        recurCustom: { type: 'monthly', monthDays: [1, 15] },
+        dueDate,
+      })
+      .returning();
+
+    const result = await completeTodo(seeded);
+    expect(result.status).toBe('completed');
+
+    const [child] = await db.select().from(todoItems).where(eq(todoItems.parentId, seeded.id));
+    expect(child).toBeDefined();
+    expect(new Date(child.dueDate).toISOString()).toBe('2026-01-15T00:00:00.000Z');
+
+    await db.delete(todoItems).where(eq(todoItems.id, child.id));
+    await db.delete(todoItems).where(eq(todoItems.id, seeded.id));
+  });
 });

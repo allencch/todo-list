@@ -1,8 +1,9 @@
 import { eq } from 'drizzle-orm';
 import { db } from '@/db/client';
 import { todoItems, TodoItem } from '@/db/schema';
+import type { CustomRecurrence } from '@/modules/todo.types';
 
-const RECURRING_TYPES = ['daily', 'weekly', 'monthly', 'yearly'];
+const RECURRING_TYPES = ['daily', 'weekly', 'monthly', 'yearly', 'custom'];
 
 function getNextDueDate(dueDate: Date | null, recurType: string, recurValue: number): Date | null {
   if (!dueDate) return null;
@@ -22,9 +23,31 @@ function getNextDueDate(dueDate: Date | null, recurType: string, recurValue: num
       next.setFullYear(next.getFullYear() + recurValue);
       return next;
     default:
-      // TODO: 'custom' recurrence isn't implemented yet -- recurCustom's shape is undecided.
       return null;
   }
+}
+
+function getNextCustomDueDate(
+  dueDate: Date | null,
+  recurCustom: CustomRecurrence | null,
+): Date | null {
+  if (!dueDate || !recurCustom) return null;
+
+  const matches =
+    recurCustom.type === 'weekly'
+      ? (date: Date) => recurCustom.weekdays.includes(date.getDay())
+      : (date: Date) => recurCustom.monthDays.includes(date.getDate());
+
+  const next = new Date(dueDate);
+  // Bounded by a year -- guarantees a match since any valid weekday/month-day recurs within 366 days.
+  for (let i = 0; i < 366; i++) {
+    next.setDate(next.getDate() + 1);
+    if (matches(next)) {
+      return next;
+    }
+  }
+
+  return null;
 }
 
 export async function completeTodo(todo: TodoItem) {
@@ -36,12 +59,17 @@ export async function completeTodo(todo: TodoItem) {
 
   if (RECURRING_TYPES.includes(todo.recurType)) {
     const recurValue = todo.recurValue ?? 1;
+    const nextDueDate =
+      todo.recurType === 'custom'
+        ? getNextCustomDueDate(todo.dueDate, todo.recurCustom as CustomRecurrence | null)
+        : getNextDueDate(todo.dueDate, todo.recurType, recurValue);
+
     await db
       .insert(todoItems)
       .values({
         name: todo.name,
         description: todo.description,
-        dueDate: getNextDueDate(todo.dueDate, todo.recurType, recurValue),
+        dueDate: nextDueDate,
         priority: todo.priority,
         isAllDay: todo.isAllDay,
         recurType: todo.recurType,
