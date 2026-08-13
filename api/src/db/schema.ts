@@ -59,3 +59,5 @@ export const todoItemsRelations = relations(todoItems, ({ one }) => ({
     relationName: 'parentChild',
   }),
 }));
+
+export type TodoItem = InferSelectModel<typeof todoItems>;
