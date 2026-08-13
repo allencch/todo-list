@@ -36,17 +36,20 @@ export async function completeTodo(todo: TodoItem) {
 
   if (RECURRING_TYPES.includes(todo.recurType)) {
     const recurValue = todo.recurValue ?? 1;
-    await db.insert(todoItems).values({
-      name: todo.name,
-      description: todo.description,
-      dueDate: getNextDueDate(todo.dueDate, todo.recurType, recurValue),
-      priority: todo.priority,
-      isAllDay: todo.isAllDay,
-      recurType: todo.recurType,
-      recurValue: todo.recurValue,
-      recurCustom: todo.recurCustom,
-      parentId: todo.id,
-    });
+    await db
+      .insert(todoItems)
+      .values({
+        name: todo.name,
+        description: todo.description,
+        dueDate: getNextDueDate(todo.dueDate, todo.recurType, recurValue),
+        priority: todo.priority,
+        isAllDay: todo.isAllDay,
+        recurType: todo.recurType,
+        recurValue: todo.recurValue,
+        recurCustom: todo.recurCustom,
+        parentId: todo.id,
+      })
+      .onConflictDoNothing({ target: todoItems.parentId });
   }
 
   return updated;
