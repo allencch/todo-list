@@ -10,6 +10,7 @@ import { safeParseJson, buildErrorMessage } from '@/utils/http';
 const props = defineProps<{ todo: TodoItem }>();
 
 const statuses = ['not_started', 'in_progress', 'completed', 'archived'];
+const priorities: (string | null)[] = ['low', 'medium', 'high', null];
 
 const priorityColors: Record<string, string> = {
   high: 'text-red-500',
@@ -79,6 +80,26 @@ async function changeStatus(status: string) {
   const todo = await response.json();
   emit('submit', todo);
 }
+
+async function changePriority(priority: string | null) {
+  if (priority === (props.todo.priority ?? null)) return;
+
+  const response = await fetch(`/api/todos/${props.todo.id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ priority }),
+  });
+
+  if (!response.ok) {
+    const body = await safeParseJson(response);
+    errorMessage.value = buildErrorMessage(body);
+    showErrorModal.value = true;
+    return;
+  }
+
+  const todo = await response.json();
+  emit('submit', todo);
+}
 </script>
 
 <template>
@@ -136,7 +157,24 @@ async function changeStatus(status: string) {
           {{ humanize(status) }}
         </button>
       </div>
-      <p v-if="todo.priority">Priority: {{ humanize(todo.priority) }}</p>
+      <div class="mt-1 flex flex-wrap gap-1">
+        <button
+          v-for="priority in priorities"
+          :key="priority ?? 'none'"
+          type="button"
+          class="cursor-pointer rounded-md border px-2 py-1 text-xs"
+          :class="
+            priority === (todo.priority ?? null)
+              ? priority
+                ? `border-current bg-gray-100 font-medium ${priorityColors[priority]}`
+                : 'border-gray-400 bg-gray-100 font-medium text-gray-700'
+              : 'border-gray-200 text-gray-500'
+          "
+          @click="changePriority(priority)"
+        >
+          {{ priority ? humanize(priority) : 'None' }}
+        </button>
+      </div>
     </div>
 
     <FormModal
