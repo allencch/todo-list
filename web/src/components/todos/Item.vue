@@ -1,11 +1,17 @@
 <script setup lang="ts">
 import { ref } from 'vue';
-import { Pencil, ChevronRight, Trash2 } from '@lucide/vue';
+import { Pencil, ChevronRight, Trash2, Flag } from '@lucide/vue';
 import type { TodoItem } from '@/types/todo';
 import FormModal from './FormModal.vue';
 import DeleteModal from './DeleteModal.vue';
 
 defineProps<{ todo: TodoItem }>();
+
+const priorityColors: Record<string, string> = {
+  high: 'text-red-500',
+  medium: 'text-amber-500',
+  low: 'text-blue-500',
+};
 
 const emit = defineEmits<{
   submit: [todo: TodoItem];
@@ -38,6 +44,7 @@ function handleDelete(todo: TodoItem) {
         <span class="inline-block transition-transform" :class="{ 'rotate-90': expanded }"
           ><ChevronRight class="h-4 w-4" /></span
         >
+        <Flag v-if="todo.priority" class="h-4 w-4" :class="priorityColors[todo.priority]" />
         {{ todo.name }}
       </button>
       <div class="flex items-center gap-2">
