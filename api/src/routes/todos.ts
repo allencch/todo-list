@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { eq } from 'drizzle-orm';
+import { eq, desc } from 'drizzle-orm';
 import { todoItems } from '@/db/schema';
 import { db } from '@/db/client';
 import { completeTodo } from '@/services/todo.service';
@@ -27,7 +27,7 @@ async function createTodo(request, reply) {
 
 // TODO: Add pagination, sorting, filtering
 async function listTodos(request, reply) {
-  const todos = await db.select().from(todoItems);
+  const todos = await db.select().from(todoItems).orderBy(desc(todoItems.id));
   reply.code(200);
   return todos;
 }
