@@ -92,6 +92,29 @@ describe('PATCH /api/todos/:id', () => {
 
     await db.delete(todoItems).where(eq(todoItems.id, seeded.id));
   });
+
+  it('updates recurCustom value', async () => {
+    const [seeded] = await db
+      .insert(todoItems)
+      .values({
+        name: 'Custom recurring todo',
+        recurType: 'custom',
+        recurCustom: { type: 'weekly', weekdays: [1, 3, 5] },
+      })
+      .returning();
+
+    const response = await fastify.inject({
+      method: 'PATCH',
+      url: `/api/todos/${seeded.id}`,
+      payload: { recurCustom: { type: 'monthly', monthDays: [1, 15] } },
+    });
+
+    expect(response.statusCode).toBe(200);
+    const body = response.json();
+    expect(body.recurCustom).toEqual({ type: 'monthly', monthDays: [1, 15] });
+
+    await db.delete(todoItems).where(eq(todoItems.id, seeded.id));
+  });
 });
 
 describe('DELETE /api/todos/:id', () => {

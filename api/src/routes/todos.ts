@@ -3,6 +3,7 @@ import { eq, desc, inArray } from 'drizzle-orm';
 import { todoItems } from '@/db/schema';
 import { db } from '@/db/client';
 import { completeTodo } from '@/services/todo.service';
+import { CustomRecurrence } from '@/modules/todo.types';
 
 async function attachNextDueDates(todos) {
   const completedIds = todos.filter((todo) => todo.status === 'completed').map((todo) => todo.id);
@@ -22,19 +23,49 @@ async function attachNextDueDates(todos) {
   }));
 }
 
-const createTodoSchema = z.object({
+const customRecurrenceSchema: z.ZodType<CustomRecurrence> = z.discriminatedUnion('type', [
+  z.object({
+    type: z.literal('weekly'),
+    weekdays: z.array(z.number().int().min(0).max(6)),
+  }),
+  z.object({
+    type: z.literal('monthly'),
+    monthDays: z.array(z.number().int().min(1)),
+  }),
+]);
+
+function requiresRecurCustomWhenCustom(data: {
+  recurType?: string | null;
+  recurCustom?: CustomRecurrence;
+}) {
+  return data.recurType !== 'custom' || data.recurCustom != null;
+}
+
+const baseTodoSchema = z.object({
   name: z.string().min(1),
   description: z.string().optional(),
   dueDate: z.coerce.date().optional(),
   priority: z.enum(['low', 'medium', 'high']).optional(),
-  recurType: z.enum(['daily', 'weekly', 'monthly', 'yearly']).nullable().optional(),
+  recurType: z.enum(['daily', 'weekly', 'monthly', 'yearly', 'custom']).nullable().optional(),
   recurValue: z.coerce.number().int().positive().nullable().optional(),
+  recurCustom: customRecurrenceSchema.optional(),
 });
 
-const updateTodoSchema = createTodoSchema.partial().extend({
-  status: z.enum(['not_started', 'in_progress', 'archived']).optional(),
-  priority: z.enum(['low', 'medium', 'high']).nullable().optional(),
+const createTodoSchema = baseTodoSchema.refine(requiresRecurCustomWhenCustom, {
+  message: 'recurCustom is required when recurType is custom',
+  path: ['recurCustom'],
 });
+
+const updateTodoSchema = baseTodoSchema
+  .partial()
+  .extend({
+    status: z.enum(['not_started', 'in_progress', 'archived']).optional(),
+    priority: z.enum(['low', 'medium', 'high']).nullable().optional(),
+  })
+  .refine(requiresRecurCustomWhenCustom, {
+    message: 'recurCustom is required when recurType is custom',
+    path: ['recurCustom'],
+  });
 
 async function createTodo(request, reply) {
   const parsed = createTodoSchema.safeParse(request.body);
