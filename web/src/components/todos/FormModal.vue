@@ -14,7 +14,7 @@ const emit = defineEmits<{
 const todoId = ref(props.todo?.id ?? null);
 const name = ref(props.todo?.name ?? '');
 const description = ref(props.todo?.description ?? '');
-const dueDate = ref('');
+const dueDate = ref(props.todo?.dueDate?.slice(0, 10) ?? '');
 const priority = ref<'low' | 'medium' | 'high' | ''>(
   (props.todo?.priority as 'low' | 'medium' | 'high') ?? '',
 );

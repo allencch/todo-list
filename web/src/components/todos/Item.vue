@@ -47,6 +47,9 @@ function handleDelete(todo: TodoItem) {
         <Flag v-if="todo.priority" class="h-4 w-4" :class="priorityColors[todo.priority]" />
         {{ todo.name }}
       </button>
+      <span v-if="todo.dueDate" class="shrink-0 text-sm text-gray-500">
+        {{ new Date(todo.dueDate).toLocaleDateString() }}
+      </span>
       <div class="flex items-center gap-2">
         <button
           type="button"
