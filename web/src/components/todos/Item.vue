@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue';
-import { Pencil, ChevronRight, Trash2, Flag } from '@lucide/vue';
+import { Pencil, ChevronRight, Trash2, Flag, Circle, CircleDot, CircleCheck, Archive } from '@lucide/vue';
 import type { TodoItem } from '@/types/todo';
 import FormModal from './FormModal.vue';
 import DeleteModal from './DeleteModal.vue';
@@ -12,6 +12,25 @@ const priorityColors: Record<string, string> = {
   medium: 'text-amber-500',
   low: 'text-blue-500',
 };
+
+const statusIcons: Record<string, unknown> = {
+  not_started: Circle,
+  in_progress: CircleDot,
+  completed: CircleCheck,
+  archived: Archive,
+};
+
+const statusColors: Record<string, string> = {
+  not_started: 'text-gray-400',
+  in_progress: 'text-blue-500',
+  completed: 'text-green-500',
+  archived: 'text-gray-400',
+};
+
+function humanize(value: string) {
+  const words = value.replace(/_/g, ' ');
+  return words.charAt(0).toUpperCase() + words.slice(1);
+}
 
 const emit = defineEmits<{
   submit: [todo: TodoItem];
@@ -44,6 +63,11 @@ function handleDelete(todo: TodoItem) {
         <span class="inline-block transition-transform" :class="{ 'rotate-90': expanded }"
           ><ChevronRight class="h-4 w-4" /></span
         >
+        <component
+          :is="statusIcons[todo.status]"
+          class="h-4 w-4 shrink-0"
+          :class="statusColors[todo.status]"
+        />
         <Flag v-if="todo.priority" class="h-4 w-4" :class="priorityColors[todo.priority]" />
         {{ todo.name }}
       </button>
@@ -67,8 +91,8 @@ function handleDelete(todo: TodoItem) {
 
     <div v-if="expanded" class="mt-2 text-sm text-gray-500">
       <p v-if="todo.description">{{ todo.description }}</p>
-      <p>Status: {{ todo.status }}</p>
-      <p v-if="todo.priority">Priority: {{ todo.priority }}</p>
+      <p>Status: {{ humanize(todo.status) }}</p>
+      <p v-if="todo.priority">Priority: {{ humanize(todo.priority) }}</p>
     </div>
 
     <FormModal
