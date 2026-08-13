@@ -24,7 +24,7 @@ Web:
 - [x] Frontend CRUD
 - [ ] Desktop design
 - [ ] Responsive for mobile
-- [ ] Error handling
+- [x] Error handling
 
 ## Others
 
