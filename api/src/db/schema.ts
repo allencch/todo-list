@@ -15,7 +15,7 @@ import { relations, InferSelectModel, InferInsertModel } from 'drizzle-orm';
 
 export const statusEnum = pgEnum('status', ['not_started', 'in_progress', 'completed', 'archived']);
 export const priorityEnum = pgEnum('priority', ['low', 'medium', 'high']);
-export const recurEnum = pgEnum('recur', ['daily', 'weekly', 'monthly', 'custom']);
+export const recurEnum = pgEnum('recur', ['daily', 'weekly', 'monthly', 'yearly', 'custom']);
 
 // draft custom recur, based on TickTick:
 // unit_type = day, week, month

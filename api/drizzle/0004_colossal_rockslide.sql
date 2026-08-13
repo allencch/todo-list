@@ -1,0 +1,1 @@
+ALTER TYPE "public"."recur" ADD VALUE 'yearly' BEFORE 'custom';
