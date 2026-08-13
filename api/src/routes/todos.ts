@@ -9,6 +9,8 @@ const createTodoSchema = z.object({
   description: z.string().optional(),
   dueDate: z.coerce.date().optional(),
   priority: z.enum(['low', 'medium', 'high']).optional(),
+  recurType: z.enum(['daily', 'weekly', 'monthly', 'yearly']).nullable().optional(),
+  recurValue: z.coerce.number().int().positive().nullable().optional(),
 });
 
 const updateTodoSchema = createTodoSchema.partial().extend({
