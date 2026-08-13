@@ -11,7 +11,9 @@ const createTodoSchema = z.object({
   priority: z.enum(['low', 'medium', 'high']).optional(),
 });
 
-const updateTodoSchema = createTodoSchema.partial();
+const updateTodoSchema = createTodoSchema.partial().extend({
+  status: z.enum(['not_started', 'in_progress', 'archived']).optional(),
+});
 
 async function createTodo(request, reply) {
   const parsed = createTodoSchema.safeParse(request.body);
