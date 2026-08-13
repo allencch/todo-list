@@ -4,8 +4,12 @@ import { Pencil, ChevronRight, Trash2, Flag, Circle, CircleDot, CircleCheck, Arc
 import type { TodoItem } from '@/types/todo';
 import FormModal from './FormModal.vue';
 import DeleteModal from './DeleteModal.vue';
+import ErrorModal from '@/components/shared/ErrorModal.vue';
+import { safeParseJson, buildErrorMessage } from '@/utils/http';
 
-defineProps<{ todo: TodoItem }>();
+const props = defineProps<{ todo: TodoItem }>();
+
+const statuses = ['not_started', 'in_progress', 'completed', 'archived'];
 
 const priorityColors: Record<string, string> = {
   high: 'text-red-500',
@@ -40,6 +44,8 @@ const emit = defineEmits<{
 const expanded = ref(false);
 const showEditModal = ref(false);
 const showDeleteModal = ref(false);
+const showErrorModal = ref(false);
+const errorMessage = ref('');
 
 function handleSubmit(todo: TodoItem) {
   showEditModal.value = false;
@@ -49,6 +55,29 @@ function handleSubmit(todo: TodoItem) {
 function handleDelete(todo: TodoItem) {
   showDeleteModal.value = false;
   emit('delete', todo);
+}
+
+async function changeStatus(status: string) {
+  if (status === props.todo.status) return;
+
+  const response =
+    status === 'completed'
+      ? await fetch(`/api/todos/${props.todo.id}/complete`, { method: 'POST' })
+      : await fetch(`/api/todos/${props.todo.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status }),
+        });
+
+  if (!response.ok) {
+    const body = await safeParseJson(response);
+    errorMessage.value = buildErrorMessage(body);
+    showErrorModal.value = true;
+    return;
+  }
+
+  const todo = await response.json();
+  emit('submit', todo);
 }
 </script>
 
@@ -91,7 +120,22 @@ function handleDelete(todo: TodoItem) {
 
     <div v-if="expanded" class="mt-2 text-sm text-gray-500">
       <p v-if="todo.description">{{ todo.description }}</p>
-      <p>Status: {{ humanize(todo.status) }}</p>
+      <div class="mt-1 flex flex-wrap gap-1">
+        <button
+          v-for="status in statuses"
+          :key="status"
+          type="button"
+          class="cursor-pointer rounded-md border px-2 py-1 text-xs"
+          :class="
+            status === todo.status
+              ? 'border-gray-400 bg-gray-100 font-medium text-gray-700'
+              : 'border-gray-200 text-gray-500'
+          "
+          @click="changeStatus(status)"
+        >
+          {{ humanize(status) }}
+        </button>
+      </div>
       <p v-if="todo.priority">Priority: {{ humanize(todo.priority) }}</p>
     </div>
 
@@ -106,6 +150,11 @@ function handleDelete(todo: TodoItem) {
       :todo="todo"
       @close="showDeleteModal = false"
       @submit="handleDelete"
+    />
+    <ErrorModal
+      v-if="showErrorModal"
+      :message="errorMessage"
+      @close="showErrorModal = false"
     />
   </li>
 </template>
