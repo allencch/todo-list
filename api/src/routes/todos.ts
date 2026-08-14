@@ -1,11 +1,12 @@
 import { eq, asc, desc, inArray, and, or, ilike, gte, lte, sql } from 'drizzle-orm';
-import { todoItems } from '@/db/schema';
+import { todoItems, todoItemDependencies } from '@/db/schema';
 import { db } from '@/db/client';
 import { completeTodo } from '@/services/todo.service';
 import {
   createTodoSchema,
   updateTodoSchema,
   listTodosQuerySchema,
+  addDependencySchema,
 } from '@/schemas/todos.schema.js';
 
 async function attachNextDueDates(todos) {
@@ -185,6 +186,61 @@ async function postCompleteTodo(request, reply) {
   return withNextDueDate;
 }
 
+async function addDependency(request, reply) {
+  const parsed = addDependencySchema.safeParse(request.body);
+  if (!parsed.success) {
+    reply.code(400);
+    return { error: parsed.error.flatten() };
+  }
+
+  const { todoItemId } = parsed.data;
+
+  const { id } = request.params;
+  const todoId = Number(id);
+  if (!Number.isInteger(todoId)) {
+    reply.code(400);
+    return { error: 'Invalid id' };
+  }
+
+  if (todoId === todoItemId) {
+    reply.code(400);
+    return { error: 'A todo cannot depend on itself' };
+  }
+
+  const [todo] = await db.select().from(todoItems).where(eq(todoItems.id, todoId));
+  if (!todo) {
+    reply.code(404);
+    return { error: 'Todo not found' };
+  }
+
+  const [dependency] = await db.select().from(todoItems).where(eq(todoItems.id, todoItemId));
+  if (!dependency) {
+    reply.code(404);
+    return { error: 'Dependency todo not found' };
+  }
+
+  const [existingLink] = await db
+    .select()
+    .from(todoItemDependencies)
+    .where(
+      and(
+        eq(todoItemDependencies.todoItemId, todoId),
+        eq(todoItemDependencies.dependencyId, todoItemId)
+      )
+    );
+  if (existingLink) {
+    reply.code(409);
+    return { error: 'Dependency already exists' };
+  }
+
+  await db.insert(todoItemDependencies).values({
+    todoItemId: todoId,
+    dependencyId: todoItemId,
+  });
+
+  return reply.status(204).send();
+}
+
 async function todoRoutes(fastify, options) {
   fastify.get('', listTodos);
   fastify.get('/:id', getTodo);
@@ -192,6 +248,7 @@ async function todoRoutes(fastify, options) {
   fastify.patch('/:id', updateTodo);
   fastify.delete('/:id', deleteTodo);
   fastify.post('/:id/complete', postCompleteTodo);
+  fastify.post('/:id/dependencies', addDependency);
 }
 
 export { todoRoutes };

@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { eq } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 import { db } from '@/db/client';
-import { todoItems } from '@/db/schema';
+import { todoItems, todoItemDependencies } from '@/db/schema';
 
 const { fastify } = await import('@/index');
 
@@ -293,5 +293,38 @@ describe('POST /api/todos/:id/complete', () => {
 
     await db.delete(todoItems).where(eq(todoItems.id, child.id));
     await db.delete(todoItems).where(eq(todoItems.id, seeded.id));
+  });
+});
+
+describe('POST /api/todos/:id/dependencies', () => {
+  it('adds a dependency to a todo item', async () => {
+    const [todo] = await db.insert(todoItems).values({ name: 'Build frontend' }).returning();
+    const [dependency] = await db
+      .insert(todoItems)
+      .values({ name: 'Design frontend' })
+      .returning();
+
+    const response = await fastify.inject({
+      method: 'POST',
+      url: `/api/todos/${todo.id}/dependencies`,
+      payload: { todoItemId: dependency.id },
+    });
+
+    expect(response.statusCode).toBe(204);
+
+    const [link] = await db
+      .select()
+      .from(todoItemDependencies)
+      .where(
+        and(
+          eq(todoItemDependencies.todoItemId, todo.id),
+          eq(todoItemDependencies.dependencyId, dependency.id),
+        ),
+      );
+    expect(link).toBeDefined();
+
+    await db.delete(todoItemDependencies).where(eq(todoItemDependencies.todoItemId, todo.id));
+    await db.delete(todoItems).where(eq(todoItems.id, todo.id));
+    await db.delete(todoItems).where(eq(todoItems.id, dependency.id));
   });
 });

@@ -54,3 +54,7 @@ export const listTodosQuerySchema = z.object({
   sortBy: z.enum(['dueDate', 'priority', 'status', 'name', 'createdAt']).optional(),
   sortOrder: z.enum(['asc', 'desc']).optional(),
 });
+
+export const addDependencySchema = z.object({
+  todoItemId: z.number().int().positive(),
+});
