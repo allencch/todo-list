@@ -8,10 +8,17 @@ const emit = defineEmits<{
 
 const status = ref('');
 const priority = ref('');
+const dueDateMin = ref('');
+const dueDateMax = ref('');
 const showPriorityFilter = ref(false);
 
 function emitChange() {
-  emit('change', { status: status.value, priority: priority.value });
+  emit('change', {
+    status: status.value,
+    priority: priority.value,
+    dueDateMin: dueDateMin.value,
+    dueDateMax: dueDateMax.value,
+  });
 }
 
 function setStatus(value: string) {
@@ -21,6 +28,16 @@ function setStatus(value: string) {
 
 function setPriority(value: string) {
   priority.value = value;
+  emitChange();
+}
+
+function setDueDateMin(value: string) {
+  dueDateMin.value = value;
+  emitChange();
+}
+
+function setDueDateMax(value: string) {
+  dueDateMax.value = value;
   emitChange();
 }
 </script>
@@ -140,5 +157,26 @@ function setPriority(value: string) {
     >
       High
     </button>
+  </div>
+
+  <div v-if="showPriorityFilter" class="flex items-center gap-2 px-4 mt-1">
+    <label class="flex items-center gap-2 text-sm text-gray-600">
+      Due from
+      <input
+        type="date"
+        class="rounded-md border border-gray-300 px-2 py-1.5 text-sm"
+        :value="dueDateMin"
+        @change="setDueDateMin(($event.target as HTMLInputElement).value)"
+      />
+    </label>
+    <label class="flex items-center gap-2 text-sm text-gray-600">
+      to
+      <input
+        type="date"
+        class="rounded-md border border-gray-300 px-2 py-1.5 text-sm"
+        :value="dueDateMax"
+        @change="setDueDateMax(($event.target as HTMLInputElement).value)"
+      />
+    </label>
   </div>
 </template>
