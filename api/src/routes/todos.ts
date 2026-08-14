@@ -1,4 +1,4 @@
-import { eq, asc, desc, inArray, and, or, ilike, gte, lte } from 'drizzle-orm';
+import { eq, asc, desc, inArray, and, or, ilike, gte, lte, sql } from 'drizzle-orm';
 import { todoItems } from '@/db/schema';
 import { db } from '@/db/client';
 import { completeTodo } from '@/services/todo.service';
@@ -71,7 +71,17 @@ async function listTodos(request, reply) {
   if (dueDateMax) conditions.push(lte(todoItems.dueDate, dueDateMax));
 
   const orderFn = sortOrder === 'asc' ? asc : desc;
-  const orderBy = sortBy ? orderFn(sortColumns[sortBy]) : desc(todoItems.id);
+  let orderBy;
+  if (sortBy === 'priority') {
+    orderBy =
+      sortOrder === 'asc'
+        ? sql`${todoItems.priority} ASC NULLS LAST`
+        : sql`${todoItems.priority} DESC NULLS LAST`;
+  } else if (sortBy) {
+    orderBy = orderFn(sortColumns[sortBy]);
+  } else {
+    orderBy = desc(todoItems.id);
+  }
 
   const todos = await db
     .select()
