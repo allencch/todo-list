@@ -62,10 +62,6 @@ function handleFilterChange(filter: Record<string, string>) {
   fetchTodos();
 }
 
-function handleAddItem() {
-  fetchTodos();
-}
-
 watch(
   () => props.search,
   (search) => {
@@ -111,7 +107,7 @@ function handlePanelSubmit() {
 
 <template>
   <ListTodoFilters @change="handleFilterChange">
-    <AddItem @submit="handleAddItem" />
+    <AddItem />
   </ListTodoFilters>
 
   <ListTodoSort @change="handleFilterChange" />

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import {
   Pencil,
   ChevronRight,
@@ -12,13 +13,15 @@ import {
   Repeat,
 } from '@lucide/vue';
 import type { TodoItem } from '@/types/todo';
-import FormModal from './FormModal.vue';
 import DeleteModal from './DeleteModal.vue';
 import ErrorModal from '@/components/shared/ErrorModal.vue';
 import { safeParseJson, buildErrorMessage } from '@/utils/http';
 import { recurLabel } from '@/utils/todo.util.ts';
 
 const props = defineProps<{ todo: TodoItem }>();
+
+const route = useRoute();
+const router = useRouter();
 
 const statuses = ['not_started', 'in_progress', 'archived'];
 const priorities: (string | null)[] = [null, 'low', 'medium', 'high'];
@@ -55,14 +58,12 @@ const emit = defineEmits<{
 }>();
 
 const expanded = ref(false);
-const showEditModal = ref(false);
 const showDeleteModal = ref(false);
 const showErrorModal = ref(false);
 const errorMessage = ref('');
 
-function handleSubmit(todo: TodoItem) {
-  showEditModal.value = false;
-  emit('submit', todo);
+function openEdit() {
+  router.push({ query: { ...route.query, edit: String(props.todo.id) } });
 }
 
 function handleDelete(todo: TodoItem) {
@@ -154,7 +155,7 @@ async function changePriority(priority: string | null) {
           type="button"
           aria-label="Edit"
           class="cursor-pointer text-gray-500"
-          @click="showEditModal = true"
+          @click="openEdit"
         >
           <Pencil class="h-4 w-4" />
         </button>
@@ -219,12 +220,6 @@ async function changePriority(priority: string | null) {
       </div>
     </div>
 
-    <FormModal
-      v-if="showEditModal"
-      :todo="todo"
-      @close="showEditModal = false"
-      @submit="handleSubmit"
-    />
     <DeleteModal
       v-if="showDeleteModal"
       :todo="todo"
