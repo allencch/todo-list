@@ -51,11 +51,15 @@ function handleFilterChange(filter: Record<string, string>) {
   Object.assign(filterState.value, filter);
   fetchTodos();
 }
+
+function handleAddItem() {
+  fetchTodos();
+}
 </script>
 
 <template>
   <ListTodoFilters @change="handleFilterChange">
-    <AddItem @submit="todos.push($event)" />
+    <AddItem @submit="handleAddItem" />
   </ListTodoFilters>
 
   <ListTodoSort @change="handleFilterChange" />

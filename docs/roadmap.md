@@ -27,6 +27,8 @@ Web:
 - [ ] Responsive for mobile
 - [x] Error handling
 - [x] Filtering
+- [ ] Toast
+- [ ] Route
 
 ## Others
 
