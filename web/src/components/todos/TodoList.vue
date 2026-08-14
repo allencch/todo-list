@@ -3,6 +3,7 @@ import { ref, onMounted } from 'vue';
 import Item from '@/components/todos/Item.vue';
 import AddItem from '@/components/todos/AddItem.vue';
 import ListTodoFilters from '@/components/todos/ListTodoFilters.vue';
+import ListTodoSort from '@/components/todos/ListTodoSort.vue';
 import ErrorModal from '@/components/shared/ErrorModal.vue';
 import type { TodoItem } from '@/types/todo';
 
@@ -47,7 +48,7 @@ function handleDelete(todo: TodoItem) {
 }
 
 function handleFilterChange(filter: Record<string, string>) {
-  filterState.value = filter;
+  Object.assign(filterState.value, filter);
   fetchTodos();
 }
 </script>
@@ -56,6 +57,8 @@ function handleFilterChange(filter: Record<string, string>) {
   <ListTodoFilters @change="handleFilterChange">
     <AddItem @submit="todos.push($event)" />
   </ListTodoFilters>
+
+  <ListTodoSort @change="handleFilterChange" />
 
   <main class="flex-1 overflow-y-auto px-4 py-4">
     <ul class="divide-y divide-gray-200 rounded-md border border-gray-300">
