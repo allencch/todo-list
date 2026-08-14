@@ -2,6 +2,12 @@
 
 Decision logs and other general logs in reverse order.
 
+## 2026-08-14
+
+Status `archived` should be a different column, instead of same column with `not_started`, `in_progress`, and `completed`.
+Becaused completed task can be archived later.
+But, just do as the status for now.
+
 
 ## 2026-08-12
 
