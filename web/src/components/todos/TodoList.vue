@@ -1,17 +1,25 @@
 <script setup lang="ts">
-import { ref, watch, onMounted } from 'vue';
+import { ref, computed, watch, onMounted } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import Item from '@/components/todos/Item.vue';
 import AddItem from '@/components/todos/AddItem.vue';
 import ListTodoFilters from '@/components/todos/ListTodoFilters.vue';
 import ListTodoSort from '@/components/todos/ListTodoSort.vue';
+import FormModal from '@/components/todos/FormModal.vue';
 import ErrorModal from '@/components/shared/ErrorModal.vue';
 import type { TodoItem } from '@/types/todo';
 
 const props = defineProps<{ search?: string }>();
 
+const route = useRoute();
+const router = useRouter();
+
 const todos = ref<TodoItem[]>([]);
 const filterState = ref<Record<string, string>>({ status: '' });
 const error = ref('');
+
+const editingTodo = ref<TodoItem | null>(null);
+const isCreating = computed(() => route.query.new === '1');
 
 function sanitizeQueryParams() {
   const cleanedParams = Object.fromEntries(
@@ -65,6 +73,40 @@ watch(
     fetchTodos();
   }
 );
+
+async function fetchEditingTodo(id: string) {
+  try {
+    const response = await fetch(`/api/todos/${id}`);
+    if (!response.ok) {
+      throw new Error(`Failed to load todo (${response.status})`);
+    }
+    editingTodo.value = await response.json();
+  } catch (err) {
+    error.value = err instanceof Error ? err.message : 'Failed to load todo';
+  }
+}
+
+watch(
+  () => route.query.edit,
+  (edit) => {
+    if (typeof edit === 'string') {
+      fetchEditingTodo(edit);
+    } else {
+      editingTodo.value = null;
+    }
+  },
+  { immediate: true }
+);
+
+function closePanel() {
+  const { edit, new: _new, ...rest } = route.query;
+  router.replace({ query: rest });
+}
+
+function handlePanelSubmit() {
+  fetchTodos();
+  closePanel();
+}
 </script>
 
 <template>
@@ -86,6 +128,13 @@ watch(
       />
     </ul>
   </main>
+
+  <FormModal
+    v-if="editingTodo || isCreating"
+    :todo="editingTodo ?? undefined"
+    @close="closePanel"
+    @submit="handlePanelSubmit"
+  />
 
   <ErrorModal v-if="error" :message="error" @close="error = ''" />
 </template>
