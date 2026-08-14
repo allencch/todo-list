@@ -43,6 +43,13 @@
       "when": 1786593143888,
       "tag": "0005_legal_vanisher",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1786722327904,
+      "tag": "0006_fantastic_dorian_gray",
+      "breakpoints": true
     }
   ]
 }

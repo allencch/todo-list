@@ -10,6 +10,7 @@ import {
   uniqueIndex,
   jsonb,
   AnyPgColumn,
+  primaryKey,
 } from 'drizzle-orm/pg-core';
 import { relations, InferSelectModel, InferInsertModel } from 'drizzle-orm';
 
@@ -38,6 +39,9 @@ export const todoItems = pgTable(
     parentId: integer('parent_id').references((): AnyPgColumn => todoItems.id, {
       onDelete: 'set null',
     }),
+    dependentId: integer('dependent_id').references((): AnyPgColumn => todoItems.id, {
+      onDelete: 'set null',
+    }),
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at')
       .defaultNow()
@@ -50,7 +54,30 @@ export const todoItems = pgTable(
   }),
 );
 
-export const todoItemsRelations = relations(todoItems, ({ one }) => ({
+
+// Dependencies relationship:
+// Todo A can only be completed, only if todo B is completed.
+// Thus, todo A is the dependent, todo B is the dependencies
+// Use join-table for many-to-many relationship
+
+export const todoItemDependencies = pgTable(
+  'todo_item_dependencies',
+  {
+    todoItemId: integer('todo_item_id')
+      .notNull()
+      .references(() => todoItems.id, { onDelete: 'cascade' }),
+    dependencyId: integer('dependency_id')
+      .notNull()
+      .references(() => todoItems.id, { onDelete: 'cascade' }),
+  },
+  (table) => [
+    primaryKey({
+      columns: [table.todoItemId, table.dependencyId],
+    }),
+  ],
+)
+
+export const todoItemsRelations = relations(todoItems, ({ one, many }) => ({
   parent: one(todoItems, {
     fields: [todoItems.parentId],
     references: [todoItems.id],
@@ -59,6 +86,27 @@ export const todoItemsRelations = relations(todoItems, ({ one }) => ({
   child: one(todoItems, {
     relationName: 'parentChild',
   }),
+
+  // many-to-many relationship here
+  dependencyLinks: many(todoItemDependencies, { relationName: 'todoItemDependencyLinks' }),
+  dependentLinks: many(todoItemDependencies, { relationName: 'dependencyTodoItemLinks' }),
 }));
+
+// This is one-to-one relationship
+export const todoItemDependenciesRelations = relations(
+  todoItemDependencies,
+  ({ one }) => ({
+    todoItem: one(todoItems, {
+      fields: [todoItemDependencies.todoItemId],
+      references: [todoItems.id],
+      relationName: 'todoItemDependencyLinks',
+    }),
+    dependency: one(todoItems, {
+      fields: [todoItemDependencies.dependencyId],
+      references: [todoItems.id],
+      relationName: 'dependencyTodoItemLinks',
+    }),
+  }),
+);
 
 export type TodoItem = InferSelectModel<typeof todoItems>;
