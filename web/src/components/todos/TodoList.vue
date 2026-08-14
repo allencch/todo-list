@@ -1,11 +1,13 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, watch, onMounted } from 'vue';
 import Item from '@/components/todos/Item.vue';
 import AddItem from '@/components/todos/AddItem.vue';
 import ListTodoFilters from '@/components/todos/ListTodoFilters.vue';
 import ListTodoSort from '@/components/todos/ListTodoSort.vue';
 import ErrorModal from '@/components/shared/ErrorModal.vue';
 import type { TodoItem } from '@/types/todo';
+
+const props = defineProps<{ search?: string }>();
 
 const todos = ref<TodoItem[]>([]);
 const filterState = ref<Record<string, string>>({ status: '' });
@@ -55,6 +57,14 @@ function handleFilterChange(filter: Record<string, string>) {
 function handleAddItem() {
   fetchTodos();
 }
+
+watch(
+  () => props.search,
+  (search) => {
+    filterState.value.content = search ?? '';
+    fetchTodos();
+  }
+);
 </script>
 
 <template>

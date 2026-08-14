@@ -1,5 +1,13 @@
 <script setup lang="ts">
+import { ref } from 'vue';
 import TodoList from '@/components/todos/TodoList.vue';
+
+const searchInput = ref('');
+const search = ref('');
+
+function handleSearch() {
+  search.value = searchInput.value;
+}
 </script>
 
 <template>
@@ -9,11 +17,15 @@ import TodoList from '@/components/todos/TodoList.vue';
         type="text"
         placeholder="Search"
         class="flex-1 rounded-md border border-gray-300 px-3 py-2"
+        v-model="searchInput"
+        @keyup.enter="handleSearch"
       />
-      <button class="rounded-md border border-gray-300 px-3 py-2">Search</button>
+      <button class="rounded-md border border-gray-300 px-3 py-2" @click="handleSearch">
+        Search
+      </button>
       <button class="h-10 w-10 rounded-full border border-gray-300"></button>
     </header>
 
-    <TodoList />
+    <TodoList :search="search" />
   </div>
 </template>
