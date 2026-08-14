@@ -7,6 +7,7 @@ const emit = defineEmits<{
 }>();
 
 const SORT_FIELDS = [
+  { value: 'createdAt', label: 'Created date'},
   { value: 'dueDate', label: 'Due date' },
   { value: 'priority', label: 'Priority' },
   { value: 'status', label: 'Status' },

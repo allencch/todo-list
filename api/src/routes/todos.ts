@@ -43,6 +43,7 @@ const sortColumns = {
   priority: todoItems.priority,
   status: todoItems.status,
   name: todoItems.name,
+  createdAt: todoItems.createdAt,
 };
 
 // TODO: Add pagination
