@@ -116,6 +116,48 @@ describe('GET /api/todos', () => {
     await db.delete(todoItems).where(eq(todoItems.id, matching.id));
     await db.delete(todoItems).where(eq(todoItems.id, nonMatching.id));
   });
+
+  it('sorts by name ascending', async () => {
+    const [b] = await db.insert(todoItems).values({ name: 'Sort name B' }).returning();
+    const [a] = await db.insert(todoItems).values({ name: 'Sort name A' }).returning();
+
+    const response = await fastify.inject({
+      method: 'GET',
+      url: '/api/todos',
+      query: { sortBy: 'name', sortOrder: 'asc' },
+    });
+
+    expect(response.statusCode).toBe(200);
+    const ids = response.json().map((todo) => todo.id);
+    expect(ids.indexOf(a.id)).toBeLessThan(ids.indexOf(b.id));
+
+    await db.delete(todoItems).where(eq(todoItems.id, a.id));
+    await db.delete(todoItems).where(eq(todoItems.id, b.id));
+  });
+
+  it('sorts by priority in low, medium, high order', async () => {
+    const [high] = await db
+      .insert(todoItems)
+      .values({ name: 'Sort priority high', priority: 'high' })
+      .returning();
+    const [low] = await db
+      .insert(todoItems)
+      .values({ name: 'Sort priority low', priority: 'low' })
+      .returning();
+
+    const response = await fastify.inject({
+      method: 'GET',
+      url: '/api/todos',
+      query: { sortBy: 'priority', sortOrder: 'asc' },
+    });
+
+    expect(response.statusCode).toBe(200);
+    const ids = response.json().map((todo) => todo.id);
+    expect(ids.indexOf(low.id)).toBeLessThan(ids.indexOf(high.id));
+
+    await db.delete(todoItems).where(eq(todoItems.id, high.id));
+    await db.delete(todoItems).where(eq(todoItems.id, low.id));
+  });
 });
 
 describe('GET /api/todos/:id', () => {

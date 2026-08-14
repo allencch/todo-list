@@ -1,4 +1,4 @@
-import { eq, desc, inArray, and, or, ilike, gte, lte } from 'drizzle-orm';
+import { eq, asc, desc, inArray, and, or, ilike, gte, lte } from 'drizzle-orm';
 import { todoItems } from '@/db/schema';
 import { db } from '@/db/client';
 import { completeTodo } from '@/services/todo.service';
@@ -38,8 +38,14 @@ async function createTodo(request, reply) {
   return todo;
 }
 
+const sortColumns = {
+  dueDate: todoItems.dueDate,
+  priority: todoItems.priority,
+  status: todoItems.status,
+  name: todoItems.name,
+};
+
 // TODO: Add pagination
-// TODO: sort by due date, priority, status, name
 async function listTodos(request, reply) {
   const parsed = listTodosQuerySchema.safeParse(request.query);
   if (!parsed.success) {
@@ -47,7 +53,7 @@ async function listTodos(request, reply) {
     return { error: parsed.error.flatten() };
   }
 
-  const { status, priority, content, dueDateMin, dueDateMax } = parsed.data;
+  const { status, priority, content, dueDateMin, dueDateMax, sortBy, sortOrder } = parsed.data;
 
   const conditions = [];
   if (status) conditions.push(eq(todoItems.status, status));
@@ -63,11 +69,14 @@ async function listTodos(request, reply) {
   if (dueDateMin) conditions.push(gte(todoItems.dueDate, dueDateMin));
   if (dueDateMax) conditions.push(lte(todoItems.dueDate, dueDateMax));
 
+  const orderFn = sortOrder === 'asc' ? asc : desc;
+  const orderBy = sortBy ? orderFn(sortColumns[sortBy]) : desc(todoItems.id);
+
   const todos = await db
     .select()
     .from(todoItems)
     .where(conditions.length > 0 ? and(...conditions) : undefined)
-    .orderBy(desc(todoItems.id));
+    .orderBy(orderBy);
 
   reply.code(200);
   return attachNextDueDates(todos);
