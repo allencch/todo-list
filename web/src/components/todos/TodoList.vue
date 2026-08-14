@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
+import { ChevronDown } from '@lucide/vue';
 import Item from '@/components/todos/Item.vue';
 import AddItem from '@/components/todos/AddItem.vue';
 import ErrorModal from '@/components/shared/ErrorModal.vue';
@@ -8,6 +9,7 @@ import type { TodoItem } from '@/types/todo';
 const todos = ref<TodoItem[]>([]);
 const filterState = ref<Record<string, string>>({ status: '' });
 const error = ref('');
+const showPriorityFilter = ref(false);
 
 function sanitizeQueryParams() {
   const cleanedParams = Object.fromEntries(
@@ -47,6 +49,11 @@ function handleDelete(todo: TodoItem) {
 
 function setFilterStatus(status: string) {
   filterState.value.status = status;
+  fetchTodos();
+}
+
+function setFilterPriority(priority: string) {
+  filterState.value.priority = priority;
   fetchTodos();
 }
 </script>
@@ -109,8 +116,63 @@ function setFilterStatus(status: string) {
       >
         Completed
       </button>
+      <button
+        type="button"
+        class="flex items-center gap-1 px-2 py-1.5 text-sm whitespace-nowrap text-gray-500 hover:text-gray-900"
+        @click="showPriorityFilter = !showPriorityFilter"
+      >
+        More filters
+        <ChevronDown class="h-4 w-4 transition-transform" :class="showPriorityFilter ? 'rotate-180' : ''" />
+      </button>
     </div>
     <AddItem @submit="todos.push($event)" />
+  </div>
+
+  <div v-if="showPriorityFilter" class="flex items-center gap-2 px-4">
+    <button
+      class="rounded-full border px-3 py-1.5 text-sm whitespace-nowrap"
+      :class="
+        filterState.priority === ''
+          ? 'border-gray-900 bg-gray-900 text-white'
+          : 'border-gray-300 text-gray-600 hover:bg-gray-100'
+      "
+      @click="setFilterPriority('')"
+    >
+      No priority
+    </button>
+    <button
+      class="rounded-full border px-3 py-1.5 text-sm whitespace-nowrap"
+      :class="
+        filterState.priority === 'low'
+          ? 'border-gray-900 bg-gray-900 text-white'
+          : 'border-gray-300 text-gray-600 hover:bg-gray-100'
+      "
+      @click="setFilterPriority('low')"
+    >
+      Low
+    </button>
+    <button
+      class="rounded-full border px-3 py-1.5 text-sm whitespace-nowrap"
+      :class="
+        filterState.priority === 'medium'
+          ? 'border-gray-900 bg-gray-900 text-white'
+          : 'border-gray-300 text-gray-600 hover:bg-gray-100'
+      "
+      @click="setFilterPriority('medium')"
+    >
+      Medium
+    </button>
+    <button
+      class="rounded-full border px-3 py-1.5 text-sm whitespace-nowrap"
+      :class="
+        filterState.priority === 'high'
+          ? 'border-gray-900 bg-gray-900 text-white'
+          : 'border-gray-300 text-gray-600 hover:bg-gray-100'
+      "
+      @click="setFilterPriority('high')"
+    >
+      High
+    </button>
   </div>
 
   <main class="flex-1 overflow-y-auto px-4 py-4">
