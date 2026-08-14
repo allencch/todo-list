@@ -18,6 +18,7 @@ API:
   + [x] update
   + [x] delete
   + [x] error handling
+- [x] Filtering
 
 Web:
 - [x] Initial page
@@ -25,6 +26,7 @@ Web:
 - [ ] Desktop design
 - [ ] Responsive for mobile
 - [x] Error handling
+- [x] Filtering
 
 ## Others
 
