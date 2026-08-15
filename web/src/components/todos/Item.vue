@@ -5,9 +5,10 @@ import { Pencil, ChevronRight, Trash2, Flag, Repeat } from '@lucide/vue';
 import type { TodoItem } from '@/types/todo';
 import DeleteModal from './DeleteModal.vue';
 import DependencyList from './DependencyList.vue';
+import PriorityPicker from './PriorityPicker.vue';
 import ErrorModal from '@/components/shared/ErrorModal.vue';
 import { safeParseJson, buildErrorMessage } from '@/utils/http';
-import { recurLabel, statusIcons, statusColors } from '@/utils/todo.util.ts';
+import { recurLabel, statusIcons, statusColors, priorityColors, humanize } from '@/utils/todo.util.ts';
 
 const props = defineProps<{ todo: TodoItem }>();
 
@@ -15,18 +16,6 @@ const route = useRoute();
 const router = useRouter();
 
 const statuses = ['not_started', 'in_progress', 'archived'];
-const priorities: (string | null)[] = [null, 'low', 'medium', 'high'];
-
-const priorityColors: Record<string, string> = {
-  high: 'text-red-500',
-  medium: 'text-amber-500',
-  low: 'text-blue-500',
-};
-
-function humanize(value: string) {
-  const words = value.replace(/_/g, ' ');
-  return words.charAt(0).toUpperCase() + words.slice(1);
-}
 
 const emit = defineEmits<{
   submit: [todo: TodoItem];
@@ -177,24 +166,11 @@ async function changePriority(priority: string | null) {
           Complete
         </button>
       </div>
-      <div class="mt-1 flex flex-wrap gap-1">
-        <button
-          v-for="priority in priorities"
-          :key="priority ?? 'none'"
-          type="button"
-          class="cursor-pointer rounded-md border px-2 py-1 text-xs"
-          :class="
-            priority === (todo.priority ?? null)
-              ? priority
-                ? `border-current bg-gray-100 font-medium ${priorityColors[priority]}`
-                : 'border-gray-400 bg-gray-100 font-medium text-gray-700'
-              : 'border-gray-200 text-gray-500'
-          "
-          @click="changePriority(priority)"
-        >
-          {{ priority ? humanize(priority) : 'None' }}
-        </button>
-      </div>
+      <PriorityPicker
+        class="mt-1"
+        :model-value="(todo.priority as 'low' | 'medium' | 'high') ?? null"
+        @update:model-value="changePriority"
+      />
       <div v-if="todo.dependencies?.length" class="mt-2">
         <p class="mb-1 text-xs font-medium text-gray-700">Dependencies</p>
         <DependencyList :dependencies="todo.dependencies" readonly />

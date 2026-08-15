@@ -15,6 +15,17 @@ export const statusColors: Record<string, string> = {
   archived: 'text-gray-400',
 };
 
+export const priorityColors: Record<string, string> = {
+  high: 'text-red-500',
+  medium: 'text-amber-500',
+  low: 'text-blue-500',
+};
+
+export function humanize(value: string) {
+  const words = value.replace(/_/g, ' ');
+  return words.charAt(0).toUpperCase() + words.slice(1);
+}
+
 const recurUnitNouns: Record<string, string> = {
   daily: 'day',
   weekly: 'week',

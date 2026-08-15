@@ -4,6 +4,7 @@ import type { TodoItem } from '@/types/todo';
 import ErrorModal from '@/components/shared/ErrorModal.vue';
 import DaySelection from './DaySelection.vue';
 import TodoDependencies from './TodoDependencies.vue';
+import PriorityPicker from './PriorityPicker.vue';
 import { safeParseJson, buildErrorMessage } from '@/utils/http';
 
 const props = defineProps<{ todo?: TodoItem }>();
@@ -17,8 +18,8 @@ const todoId = ref(props.todo?.id ?? null);
 const name = ref(props.todo?.name ?? '');
 const description = ref(props.todo?.description ?? '');
 const dueDate = ref(props.todo?.dueDate?.slice(0, 10) ?? '');
-const priority = ref<'low' | 'medium' | 'high' | ''>(
-  (props.todo?.priority as 'low' | 'medium' | 'high') ?? '',
+const priority = ref<'low' | 'medium' | 'high' | null>(
+  (props.todo?.priority as 'low' | 'medium' | 'high') ?? null,
 );
 const recurType = ref<'daily' | 'weekly' | 'monthly' | 'yearly' | 'custom' | ''>(
   (props.todo?.recurType as 'daily' | 'weekly' | 'monthly' | 'yearly' | 'custom') ?? '',
@@ -149,86 +150,83 @@ async function handleSubmit() {
     <h2 class="mb-3 text-lg font-semibold">{{ todo ? `Edit todo: ${name}` : 'New todo' }}</h2>
 
     <form class="flex flex-col gap-3" @submit.prevent="handleSubmit">
-        <input
-          v-model="name"
-          type="text"
-          placeholder="Name"
-          required
-          class="rounded-md border border-gray-300 px-3 py-2"
-        />
-        <textarea
-          v-model="description"
-          placeholder="Description"
-          class="rounded-md border border-gray-300 px-3 py-2"
-          rows="6"
-        ></textarea>
-        <input
-          v-model="dueDate"
-          type="date"
-          class="rounded-md border border-gray-300 px-3 py-2"
-        />
-        <select v-model="priority" class="rounded-md border border-gray-300 px-3 py-2">
-          <option value="">Priority</option>
-          <option value="low">Low</option>
-          <option value="medium">Medium</option>
-          <option value="high">High</option>
-        </select>
+      <input
+        v-model="name"
+        type="text"
+        placeholder="Name"
+        required
+        class="rounded-md border border-gray-300 px-3 py-2"
+      />
+      <textarea
+        v-model="description"
+        placeholder="Description"
+        class="rounded-md border border-gray-300 px-3 py-2"
+        rows="6"
+      ></textarea>
+      <input
+        v-model="dueDate"
+        type="date"
+        class="rounded-md border border-gray-300 px-3 py-2"
+      />
+      <div>
+        <label>Priority:</label> <PriorityPicker v-model="priority" />
+      </div>
 
-        <div class="flex flex-col gap-2 rounded-md border border-gray-200 p-3">
-          <div class="flex gap-2">
-            <select v-model="recurType" class="flex-1 rounded-md border border-gray-300 px-3 py-2">
-              <option value="">Does not repeat</option>
-              <option value="daily">Daily</option>
-              <option value="weekly">Weekly</option>
-              <option value="monthly">Monthly</option>
-              <option value="yearly">Yearly</option>
-              <option value="custom">Custom</option>
-            </select>
-            <div v-if="recurType && recurType !== 'custom'" class="flex items-center gap-2">
-              <span class="text-sm text-gray-500">Every</span>
-              <input
-                v-model.number="recurValue"
-                type="number"
-                min="1"
-                class="w-16 rounded-md border border-gray-300 px-3 py-2"
-              />
-              <span class="text-sm text-gray-500">{{ recurType }}(s)</span>
-            </div>
-          </div>
-
-          <div v-if="recurType === 'custom'" class="flex flex-col gap-2">
-            <select v-model="customBasis" class="rounded-md border border-gray-300 px-3 py-2">
-              <option value="weekly">Weekly</option>
-              <option value="monthly">Monthly</option>
-            </select>
-
-            <DaySelection
-              v-if="customBasis === 'weekly'"
-              v-model="customWeekdays"
-              :days="weekdayValues"
-              :labels="weekdayLabels"
+      <div class="flex flex-col gap-2 rounded-md border border-gray-200 p-3">
+        <div class="flex gap-2">
+          <select v-model="recurType" class="flex-1 rounded-md border border-gray-300 px-3 py-2">
+            <option value="">Does not repeat</option>
+            <option value="daily">Daily</option>
+            <option value="weekly">Weekly</option>
+            <option value="monthly">Monthly</option>
+            <option value="yearly">Yearly</option>
+            <option value="custom">Custom</option>
+          </select>
+          <div v-if="recurType && recurType !== 'custom'" class="flex items-center gap-2">
+            <span class="text-sm text-gray-500">Every</span>
+            <input
+              v-model.number="recurValue"
+              type="number"
+              min="1"
+              class="w-16 rounded-md border border-gray-300 px-3 py-2"
             />
-            <DaySelection v-else v-model="customMonthDays" :days="monthDayValues" shape="square" />
+            <span class="text-sm text-gray-500">{{ recurType }}(s)</span>
           </div>
         </div>
 
-        <div class="mt-2 flex justify-end gap-2">
-          <button
-            type="button"
-            class="rounded-md border border-gray-300 px-3 py-2"
-            @click="emit('close')"
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            class="rounded-md border border-gray-300 px-3 py-2 disabled:cursor-not-allowed disabled:opacity-50"
-            :disabled="isCustomRecurrenceIncomplete"
-          >
-            {{ todo ? 'Save' : 'Create' }}
-          </button>
+        <div v-if="recurType === 'custom'" class="flex flex-col gap-2">
+          <select v-model="customBasis" class="rounded-md border border-gray-300 px-3 py-2">
+            <option value="weekly">Weekly</option>
+            <option value="monthly">Monthly</option>
+          </select>
+
+          <DaySelection
+            v-if="customBasis === 'weekly'"
+            v-model="customWeekdays"
+            :days="weekdayValues"
+            :labels="weekdayLabels"
+          />
+          <DaySelection v-else v-model="customMonthDays" :days="monthDayValues" shape="square" />
         </div>
-      </form>
+      </div>
+
+      <div class="mt-2 flex justify-end gap-2">
+        <button
+          type="button"
+          class="rounded-md border border-gray-300 px-3 py-2"
+          @click="emit('close')"
+        >
+          Cancel
+        </button>
+        <button
+          type="submit"
+          class="rounded-md border border-gray-300 px-3 py-2 disabled:cursor-not-allowed disabled:opacity-50"
+          :disabled="isCustomRecurrenceIncomplete"
+        >
+          {{ todo ? 'Save' : 'Create' }}
+        </button>
+      </div>
+    </form>
 
     <TodoDependencies
       v-if="todoId"
