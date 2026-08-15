@@ -37,7 +37,6 @@ export const createTodoSchema = baseTodoSchema.refine(requiresRecurCustomWhenCus
 export const updateTodoSchema = baseTodoSchema
   .partial()
   .extend({
-    status: z.enum(['not_started', 'in_progress', 'archived']).optional(),
     priority: z.enum(['low', 'medium', 'high']).nullable().optional(),
   })
   .refine(requiresRecurCustomWhenCustom, {
@@ -66,4 +65,8 @@ export const idParamSchema = z.object({
 export const dependencyParamSchema = z.object({
   id: z.coerce.number().int().positive(),
   dependencyId: z.coerce.number().int().positive(),
+});
+
+export const updateStatusSchema = z.object({
+  status: z.enum(['not_started', 'in_progress', 'completed', 'archived']),
 });

@@ -23,6 +23,7 @@ import {
   listTodosQuerySchema,
   idParamSchema,
   dependencyParamSchema,
+  updateStatusSchema,
 } from '@/schemas/todos.schema.js';
 
 async function attachNextDueDates(todos) {
@@ -282,19 +283,7 @@ async function deleteTodo(request, reply) {
   return reply.status(204).send();
 }
 
-async function postCompleteTodo(request, reply) {
-  const parsedParams = idParamSchema.safeParse(request.params);
-  if (!parsedParams.success) {
-    reply.code(400);
-    return { error: parsedParams.error.flatten() };
-  }
-  const { id: todoId } = parsedParams.data;
-  const [todo] = await db.select().from(todoItems).where(eq(todoItems.id, todoId));
-  if (!todo) {
-    reply.code(404);
-    return { error: 'Todo not found' };
-  }
-
+async function handleCompleteStatus(todo, reply) {
   if (todo.status === 'completed') {
     // Do nothing
     reply.code(200);
@@ -305,6 +294,77 @@ async function postCompleteTodo(request, reply) {
   reply.code(200);
   const [withNextDueDate] = await attachNextDueDates([updated]);
   return withNextDueDate;
+}
+
+async function handleInProgressStatus(todo, reply) {
+  if (todo.status === 'in_progress') {
+    reply.code(200);
+    return todo;
+  }
+
+  const incompleteDependencies = await db
+    .select({ id: todoItems.id, name: todoItems.name })
+    .from(todoItemDependencies)
+    .innerJoin(todoItems, eq(todoItemDependencies.dependencyId, todoItems.id))
+    .where(
+      and(
+        eq(todoItemDependencies.todoItemId, todo.id),
+        notInArray(todoItems.status, ['completed'])
+      )
+    );
+
+  if (incompleteDependencies.length > 0) {
+    reply.code(400);
+    return { error: 'Cannot start todo until all dependencies are completed', incompleteDependencies };
+  }
+
+  const [updated] = await db
+    .update(todoItems)
+    .set({ status: 'in_progress' })
+    .where(eq(todoItems.id, todo.id))
+    .returning();
+
+  reply.code(200);
+  return updated;
+}
+
+async function updateTodoStatus(request, reply) {
+  const parsedParams = idParamSchema.safeParse(request.params);
+  if (!parsedParams.success) {
+    reply.code(400);
+    return { error: parsedParams.error.flatten() };
+  }
+  const { id: todoId } = parsedParams.data;
+
+  const parsed = updateStatusSchema.safeParse(request.body);
+  if (!parsed.success) {
+    reply.code(400);
+    return { error: parsed.error.flatten() };
+  }
+  const { status } = parsed.data;
+
+  const [todo] = await db.select().from(todoItems).where(eq(todoItems.id, todoId));
+  if (!todo) {
+    reply.code(404);
+    return { error: 'Todo not found' };
+  }
+
+  if (status === 'completed') {
+    return handleCompleteStatus(todo, reply);
+  }
+
+  if (status === 'in_progress') {
+    return handleInProgressStatus(todo, reply);
+  }
+
+  const [updated] = await db
+    .update(todoItems)
+    .set({ status })
+    .where(eq(todoItems.id, todoId))
+    .returning();
+
+  reply.code(200);
+  return updated;
 }
 
 async function addDependency(request, reply) {
@@ -405,7 +465,7 @@ async function todoRoutes(fastify, options) {
   fastify.post('', createTodo);
   fastify.patch('/:id', updateTodo);
   fastify.delete('/:id', deleteTodo);
-  fastify.post('/:id/complete', postCompleteTodo);
+  fastify.post('/:id/status', updateTodoStatus);
   fastify.post('/:id/dependencies/:dependencyId', addDependency);
   fastify.delete('/:id/dependencies/:dependencyId', removeDependency);
 }
