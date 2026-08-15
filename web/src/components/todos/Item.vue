@@ -6,16 +6,15 @@ import type { TodoItem } from '@/types/todo';
 import DeleteModal from './DeleteModal.vue';
 import DependencyList from './DependencyList.vue';
 import PriorityPicker from './PriorityPicker.vue';
+import StatusPicker from './StatusPicker.vue';
 import ErrorModal from '@/components/shared/ErrorModal.vue';
 import { safeParseJson, buildErrorMessage } from '@/utils/http';
-import { recurLabel, statusIcons, statusColors, priorityColors, humanize } from '@/utils/todo.util.ts';
+import { recurLabel, statusIcons, statusColors, priorityColors } from '@/utils/todo.util.ts';
 
 const props = defineProps<{ todo: TodoItem }>();
 
 const route = useRoute();
 const router = useRouter();
-
-const statuses = ['not_started', 'in_progress', 'archived'];
 
 const emit = defineEmits<{
   submit: [todo: TodoItem];
@@ -63,10 +62,6 @@ async function changeStatus(status: string) {
 
   const todo = await response.json();
   emit('submit', todo);
-}
-
-function toggleComplete() {
-  changeStatus(props.todo.status === 'completed' ? 'not_started' : 'completed');
 }
 
 async function changePriority(priority: string | null) {
@@ -138,34 +133,11 @@ async function changePriority(priority: string | null) {
         {{ recurLabel(todo.recurType, todo.recurValue ?? 1, todo.recurCustom) }}
       </p>
       <p v-if="todo.nextDueDate">Next: {{ new Date(todo.nextDueDate).toLocaleDateString() }}</p>
-      <div class="mt-1 flex flex-wrap gap-1">
-        <button
-          v-for="status in statuses"
-          :key="status"
-          type="button"
-          class="cursor-pointer rounded-md border px-2 py-1 text-xs"
-          :class="
-            status === todo.status
-              ? 'border-gray-400 bg-gray-100 font-medium text-gray-700'
-              : 'border-gray-200 text-gray-500'
-          "
-          @click="changeStatus(status)"
-        >
-          {{ humanize(status) }}
-        </button>
-        <button
-          type="button"
-          class="ml-auto cursor-pointer rounded-md border px-2 py-1 text-xs"
-          :class="
-            todo.status === 'completed'
-              ? 'border-green-400 bg-green-100 font-medium text-green-700'
-              : 'border-green-300 text-green-600'
-          "
-          @click="toggleComplete"
-        >
-          Complete
-        </button>
-      </div>
+      <StatusPicker
+        class="mt-1"
+        :model-value="(todo.status as 'not_started' | 'in_progress' | 'completed' | 'archived')"
+        @update:model-value="changeStatus"
+      />
       <PriorityPicker
         class="mt-1"
         :model-value="(todo.priority as 'low' | 'medium' | 'high') ?? null"

@@ -199,6 +199,7 @@ function handlePanelSubmit() {
         :todo="editingTodo ?? undefined"
         @close="closePanel"
         @submit="handlePanelSubmit"
+        @complete="fetchTodos"
       />
       <div v-else class="flex h-full items-center justify-center p-4 text-sm text-gray-400">
         Select a todo to view details

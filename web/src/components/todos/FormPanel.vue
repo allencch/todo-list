@@ -5,6 +5,7 @@ import ErrorModal from '@/components/shared/ErrorModal.vue';
 import DaySelection from './DaySelection.vue';
 import TodoDependencies from './TodoDependencies.vue';
 import PriorityPicker from './PriorityPicker.vue';
+import StatusPicker from './StatusPicker.vue';
 import { safeParseJson, buildErrorMessage } from '@/utils/http';
 
 const props = defineProps<{ todo?: TodoItem }>();
@@ -12,6 +13,7 @@ const props = defineProps<{ todo?: TodoItem }>();
 const emit = defineEmits<{
   close: [];
   submit: [todo: TodoItem];
+  complete: [];
 }>();
 
 const todoId = ref(props.todo?.id ?? null);
@@ -28,6 +30,11 @@ const recurValue = ref(props.todo?.recurValue ?? 1);
 
 const dependencies = ref<{ id: number; name: string; status: string }[]>(
   props.todo?.dependencies ?? [],
+);
+
+const status = ref<'not_started' | 'in_progress' | 'completed' | 'archived'>(
+  (props.todo?.status as 'not_started' | 'in_progress' | 'completed' | 'archived') ??
+    'not_started',
 );
 
 const weekdayLabels = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
@@ -83,6 +90,28 @@ async function removeDependency(dependencyId: number) {
   }
 
   dependencies.value = dependencies.value.filter((d) => d.id !== dependencyId);
+}
+
+async function changeStatus(newStatus: 'not_started' | 'in_progress' | 'completed' | 'archived') {
+  const response = await fetch(`/api/todos/${todoId.value}/status`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ status: newStatus }),
+  });
+
+  if (!response.ok) {
+    const body = await safeParseJson(response);
+    errorMessage.value = buildErrorMessage(body);
+    showErrorModal.value = true;
+    return;
+  }
+
+  const updated = await response.json();
+  status.value = updated.status;
+
+  if (newStatus === 'completed') {
+    emit('complete');
+  }
 }
 
 function buildRecurFields() {
@@ -169,7 +198,7 @@ async function handleSubmit() {
         class="rounded-md border border-gray-300 px-3 py-2"
       />
       <div>
-        <label>Priority:</label> <PriorityPicker v-model="priority" />
+        <label class="mb-1 text-sm font-medium text-gray-700">Priority</label> <PriorityPicker v-model="priority" />
       </div>
 
       <div class="flex flex-col gap-2 rounded-md border border-gray-200 p-3">
@@ -227,6 +256,11 @@ async function handleSubmit() {
         </button>
       </div>
     </form>
+
+    <div v-if="todoId" class="mt-3">
+      <label class="mb-1 block text-sm font-medium text-gray-700">Status</label>
+      <StatusPicker :model-value="status" @update:model-value="changeStatus" />
+    </div>
 
     <TodoDependencies
       v-if="todoId"
