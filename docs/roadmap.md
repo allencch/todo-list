@@ -42,3 +42,8 @@ Web:
 - [ ] Time granularity
 - [ ] AI summarize
 - [ ] Embedding search? - This require generating embedding
+
+
+## Known limitations
+
+- Circular dependencies not yet handled
