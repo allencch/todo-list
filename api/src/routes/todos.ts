@@ -23,6 +23,7 @@ import {
   listTodosQuerySchema,
   addDependencySchema,
   idParamSchema,
+  dependencyParamSchema,
 } from '@/schemas/todos.schema.js';
 
 async function attachNextDueDates(todos) {
@@ -352,9 +353,49 @@ async function addDependency(request, reply) {
   return reply.status(204).send();
 }
 
-// async function removeDependency(request, reply) {
-//   const { id, dependencyId } = request.params;
-// }
+async function removeDependency(request, reply) {
+  const parsedParams = dependencyParamSchema.safeParse(request.params);
+  if (!parsedParams.success) {
+    reply.code(400);
+    return { error: parsedParams.error.flatten() };
+  }
+
+  const { id: todoId, dependencyId } = parsedParams.data;
+
+  const [todo] = await db.select().from(todoItems).where(eq(todoItems.id, todoId));
+  if (!todo) {
+    reply.code(404);
+    return { error: 'Todo not found' };
+  }
+
+  const [dependency] = await db.select().from(todoItems).where(eq(todoItems.id, dependencyId));
+  if (!dependency) {
+    reply.code(404);
+    return { error: 'Dependency todo not found' };
+  }
+
+  const [existingLink] = await db
+    .select()
+    .from(todoItemDependencies)
+    .where(
+      and(
+        eq(todoItemDependencies.todoItemId, todoId),
+        eq(todoItemDependencies.dependencyId, dependencyId)
+      )
+    );
+  if (!existingLink) {
+    reply.code(404);
+    return { error: 'No dependency found' };
+  }
+  await db.delete(todoItemDependencies).where(
+    and(
+      eq(todoItemDependencies.todoItemId, todoId),
+      eq(todoItemDependencies.dependencyId, dependencyId)
+    )
+  );
+
+  return reply.code(204).send();
+}
 
 async function todoRoutes(fastify, options) {
   fastify.get('', listTodos);
@@ -364,6 +405,7 @@ async function todoRoutes(fastify, options) {
   fastify.delete('/:id', deleteTodo);
   fastify.post('/:id/complete', postCompleteTodo);
   fastify.post('/:id/dependencies', addDependency);
+  fastify.delete('/:id/dependencies/:dependencyId', removeDependency);
 }
 
 export { todoRoutes };

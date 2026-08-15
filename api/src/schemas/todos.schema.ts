@@ -66,3 +66,8 @@ export const addDependencySchema = z.object({
 export const idParamSchema = z.object({
   id: z.coerce.number().int().positive(),
 });
+
+export const dependencyParamSchema = z.object({
+  id: z.coerce.number().int().positive(),
+  dependencyId: z.coerce.number().int().positive(),
+});
