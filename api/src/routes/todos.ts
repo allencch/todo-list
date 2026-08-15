@@ -196,24 +196,44 @@ async function listTodos(request, reply) {
   if (pageSize) {
     const hasMore = rows.length > pageSize;
     const page = hasMore ? rows.slice(0, pageSize) : rows;
-    const data = await attachNextDueDates(page);
+    const data = await attachDependencies(await attachNextDueDates(page));
     const last = page[page.length - 1];
     const nextCursor =
       hasMore && last ? encodeCursor(cursorValueFromTodo(last, sortBy), last.id) : null;
     return { data, nextCursor };
   }
 
-  return attachNextDueDates(rows);
+  return attachDependencies(await attachNextDueDates(rows));
 }
 
-async function attachDependencies(todo) {
-  const dependencies = await db
-    .select({ id: todoItems.id, name: todoItems.name, status: todoItems.status })
+async function attachDependencies(todos) {
+  if (todos.length === 0) {
+    return todos;
+  }
+
+  const links = await db
+    .select({
+      todoItemId: todoItemDependencies.todoItemId,
+      id: todoItems.id,
+      name: todoItems.name,
+      status: todoItems.status,
+    })
     .from(todoItemDependencies)
     .innerJoin(todoItems, eq(todoItemDependencies.dependencyId, todoItems.id))
-    .where(eq(todoItemDependencies.todoItemId, todo.id));
+    .where(inArray(todoItemDependencies.todoItemId, todos.map((todo) => todo.id)));
 
-  return { ...todo, dependencies };
+  const dependenciesByTodoId = new Map();
+  for (const { todoItemId, ...dependency } of links) {
+    if (!dependenciesByTodoId.has(todoItemId)) {
+      dependenciesByTodoId.set(todoItemId, []);
+    }
+    dependenciesByTodoId.get(todoItemId).push(dependency);
+  }
+
+  return todos.map((todo) => ({
+    ...todo,
+    dependencies: dependenciesByTodoId.get(todo.id) ?? [],
+  }));
 }
 
 async function getTodo(request, reply) {
@@ -234,7 +254,8 @@ async function getTodo(request, reply) {
   }
   reply.code(200);
   const [withNextDueDate] = await attachNextDueDates([todo]);
-  return attachDependencies(withNextDueDate);
+  const [withDependencies] = await attachDependencies([withNextDueDate]);
+  return withDependencies;
 }
 
 async function updateTodo(request, reply) {
