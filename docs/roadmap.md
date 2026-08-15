@@ -23,21 +23,21 @@ API:
 Web:
 - [x] Initial page
 - [x] Frontend CRUD
-- [ ] Desktop design
+- [x] Desktop design
 - [ ] Responsive for mobile
 - [x] Error handling
 - [x] Filtering
 - [ ] Toast
-- [ ] Route
+- [x] Route
 
-## Others
 
 ## Extra features
 
+- [ ] API rate-limit
+- [ ] Frontend dark/light theme toggle
+- [ ] Keyboard navigations and shortcut
+- [ ] Web socket? Update content with PUSH
+- [ ] org-mode import/export
+- [ ] Time granularity
 - [ ] AI summarize
 - [ ] Embedding search? - This require generating embedding
-- [ ] Keyboard navigations and shortcut
-- [ ] org-mode import/export
-- [ ] Frontend dark/light theme toggle
-- [ ] Time level
-- [ ] Web socket? Update content with PUSH
