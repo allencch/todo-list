@@ -131,6 +131,7 @@ function handlePanelSubmit() {
     <div class="flex w-2/5 flex-col overflow-y-auto">
       <FormModal
         v-if="editingTodo || isCreating"
+        :key="editingTodo?.id ?? 'new'"
         :todo="editingTodo ?? undefined"
         @close="closePanel"
         @submit="handlePanelSubmit"
