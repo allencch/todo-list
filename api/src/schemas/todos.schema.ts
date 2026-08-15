@@ -56,6 +56,7 @@ export const listTodosQuerySchema = z.object({
   excludeId: z.coerce.number().int().positive().optional(),
   pageSize: z.coerce.number().int().positive().max(100).optional(),
   cursor: z.string().optional(),
+  dependencyStatus: z.enum(['blocked', 'unblocked']).optional(),
 });
 
 export const idParamSchema = z.object({

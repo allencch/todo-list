@@ -1,5 +1,6 @@
 import {
   eq,
+  ne,
   asc,
   desc,
   gt,
@@ -13,7 +14,10 @@ import {
   gte,
   lte,
   sql,
+  exists,
+  notExists,
 } from 'drizzle-orm';
+import { alias } from 'drizzle-orm/pg-core';
 import { todoItems, todoItemDependencies } from '@/db/schema';
 import { db } from '@/db/client';
 import { completeTodo } from '@/services/todo.service';
@@ -25,6 +29,8 @@ import {
   dependencyParamSchema,
   updateStatusSchema,
 } from '@/schemas/todos.schema.js';
+
+const dependencyTodoItems = alias(todoItems, 'dependency_todo_items');
 
 async function attachNextDueDates(todos) {
   const completedIds = todos.filter((todo) => todo.status === 'completed').map((todo) => todo.id);
@@ -127,6 +133,7 @@ async function listTodos(request, reply) {
     excludeId,
     pageSize,
     cursor,
+    dependencyStatus,
   } = parsed.data;
 
   const conditions = [];
@@ -151,6 +158,30 @@ async function listTodos(request, reply) {
 
     const excludedIds = [excludeId, ...existingDependencies.map((link) => link.dependencyId)];
     conditions.push(notInArray(todoItems.id, excludedIds));
+  }
+
+  if (dependencyStatus) {
+    const incompleteDependencySubquery = db
+      .select({ one: sql`1` })
+      .from(todoItemDependencies)
+      .innerJoin(dependencyTodoItems, eq(todoItemDependencies.dependencyId, dependencyTodoItems.id))
+      .where(
+        and(
+          eq(todoItemDependencies.todoItemId, todoItems.id),
+          ne(dependencyTodoItems.status, 'completed')
+        )
+      );
+
+    if (dependencyStatus === 'blocked') {
+      conditions.push(exists(incompleteDependencySubquery));
+    } else {
+      const anyDependencySubquery = db
+        .select({ one: sql`1` })
+        .from(todoItemDependencies)
+        .where(eq(todoItemDependencies.todoItemId, todoItems.id));
+
+      conditions.push(and(exists(anyDependencySubquery), notExists(incompleteDependencySubquery)));
+    }
   }
 
   let decodedCursor;

@@ -218,6 +218,153 @@ describe('GET /api/todos', () => {
     await db.delete(todoItems).where(eq(todoItems.id, unrelated.id));
   });
 
+  it('filters by dependencyStatus=blocked', async () => {
+    const [blocked] = await db
+      .insert(todoItems)
+      .values({ name: 'Dependency status test blocked' })
+      .returning();
+    const [unblocked] = await db
+      .insert(todoItems)
+      .values({ name: 'Dependency status test unblocked' })
+      .returning();
+    const [noDependency] = await db
+      .insert(todoItems)
+      .values({ name: 'Dependency status test none' })
+      .returning();
+    const [incompleteDependency] = await db
+      .insert(todoItems)
+      .values({ name: 'Dependency status test incomplete dep' })
+      .returning();
+    const [completedDependency] = await db
+      .insert(todoItems)
+      .values({ name: 'Dependency status test completed dep', status: 'completed' })
+      .returning();
+    await db.insert(todoItemDependencies).values([
+      { todoItemId: blocked.id, dependencyId: incompleteDependency.id },
+      { todoItemId: unblocked.id, dependencyId: completedDependency.id },
+    ]);
+
+    const response = await fastify.inject({
+      method: 'GET',
+      url: '/api/todos',
+      query: { content: 'Dependency status test', dependencyStatus: 'blocked' },
+    });
+
+    expect(response.statusCode).toBe(200);
+    const ids = response.json().map((todo) => todo.id);
+    expect(ids).toContain(blocked.id);
+    expect(ids).not.toContain(unblocked.id);
+    expect(ids).not.toContain(noDependency.id);
+
+    await db
+      .delete(todoItemDependencies)
+      .where(eq(todoItemDependencies.todoItemId, blocked.id));
+    await db
+      .delete(todoItemDependencies)
+      .where(eq(todoItemDependencies.todoItemId, unblocked.id));
+    await db.delete(todoItems).where(eq(todoItems.id, blocked.id));
+    await db.delete(todoItems).where(eq(todoItems.id, unblocked.id));
+    await db.delete(todoItems).where(eq(todoItems.id, noDependency.id));
+    await db.delete(todoItems).where(eq(todoItems.id, incompleteDependency.id));
+    await db.delete(todoItems).where(eq(todoItems.id, completedDependency.id));
+  });
+
+  it('filters by dependencyStatus=unblocked', async () => {
+    const [blocked] = await db
+      .insert(todoItems)
+      .values({ name: 'Dependency status test blocked' })
+      .returning();
+    const [unblocked] = await db
+      .insert(todoItems)
+      .values({ name: 'Dependency status test unblocked' })
+      .returning();
+    const [noDependency] = await db
+      .insert(todoItems)
+      .values({ name: 'Dependency status test none' })
+      .returning();
+    const [incompleteDependency] = await db
+      .insert(todoItems)
+      .values({ name: 'Dependency status test incomplete dep' })
+      .returning();
+    const [completedDependency] = await db
+      .insert(todoItems)
+      .values({ name: 'Dependency status test completed dep', status: 'completed' })
+      .returning();
+    await db.insert(todoItemDependencies).values([
+      { todoItemId: blocked.id, dependencyId: incompleteDependency.id },
+      { todoItemId: unblocked.id, dependencyId: completedDependency.id },
+    ]);
+
+    const response = await fastify.inject({
+      method: 'GET',
+      url: '/api/todos',
+      query: { content: 'Dependency status test', dependencyStatus: 'unblocked' },
+    });
+
+    expect(response.statusCode).toBe(200);
+    const ids = response.json().map((todo) => todo.id);
+    expect(ids).toContain(unblocked.id);
+    expect(ids).not.toContain(blocked.id);
+    expect(ids).not.toContain(noDependency.id);
+
+    await db
+      .delete(todoItemDependencies)
+      .where(eq(todoItemDependencies.todoItemId, blocked.id));
+    await db
+      .delete(todoItemDependencies)
+      .where(eq(todoItemDependencies.todoItemId, unblocked.id));
+    await db.delete(todoItems).where(eq(todoItems.id, blocked.id));
+    await db.delete(todoItems).where(eq(todoItems.id, unblocked.id));
+    await db.delete(todoItems).where(eq(todoItems.id, noDependency.id));
+    await db.delete(todoItems).where(eq(todoItems.id, incompleteDependency.id));
+    await db.delete(todoItems).where(eq(todoItems.id, completedDependency.id));
+  });
+
+  it('includes both blocked and unblocked todos when dependencyStatus is not provided', async () => {
+    const [blocked] = await db
+      .insert(todoItems)
+      .values({ name: 'Dependency status test blocked' })
+      .returning();
+    const [unblocked] = await db
+      .insert(todoItems)
+      .values({ name: 'Dependency status test unblocked' })
+      .returning();
+    const [incompleteDependency] = await db
+      .insert(todoItems)
+      .values({ name: 'Dependency status test incomplete dep' })
+      .returning();
+    const [completedDependency] = await db
+      .insert(todoItems)
+      .values({ name: 'Dependency status test completed dep', status: 'completed' })
+      .returning();
+    await db.insert(todoItemDependencies).values([
+      { todoItemId: blocked.id, dependencyId: incompleteDependency.id },
+      { todoItemId: unblocked.id, dependencyId: completedDependency.id },
+    ]);
+
+    const response = await fastify.inject({
+      method: 'GET',
+      url: '/api/todos',
+      query: { content: 'Dependency status test' },
+    });
+
+    expect(response.statusCode).toBe(200);
+    const ids = response.json().map((todo) => todo.id);
+    expect(ids).toContain(blocked.id);
+    expect(ids).toContain(unblocked.id);
+
+    await db
+      .delete(todoItemDependencies)
+      .where(eq(todoItemDependencies.todoItemId, blocked.id));
+    await db
+      .delete(todoItemDependencies)
+      .where(eq(todoItemDependencies.todoItemId, unblocked.id));
+    await db.delete(todoItems).where(eq(todoItems.id, blocked.id));
+    await db.delete(todoItems).where(eq(todoItems.id, unblocked.id));
+    await db.delete(todoItems).where(eq(todoItems.id, incompleteDependency.id));
+    await db.delete(todoItems).where(eq(todoItems.id, completedDependency.id));
+  });
+
   it('paginates through results with a cursor', async () => {
     const seeded = await db
       .insert(todoItems)
