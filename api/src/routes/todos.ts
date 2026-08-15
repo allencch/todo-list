@@ -22,6 +22,7 @@ import {
   updateTodoSchema,
   listTodosQuerySchema,
   addDependencySchema,
+  idParamSchema,
 } from '@/schemas/todos.schema.js';
 
 async function attachNextDueDates(todos) {
@@ -106,7 +107,6 @@ function buildCursorCondition(sortBy, sortOrder, cursor) {
   return or(cmp(column, cursor.value), and(eq(column, cursor.value), cmp(todoItems.id, cursor.id)));
 }
 
-// TODO: Add pagination
 async function listTodos(request, reply) {
   const parsed = listTodosQuerySchema.safeParse(request.query);
   if (!parsed.success) {
@@ -206,12 +206,12 @@ async function listTodos(request, reply) {
 }
 
 async function getTodo(request, reply) {
-  const { id } = request.params;
-  const todoId = Number(id);
-  if (!Number.isInteger(todoId)) {
+  const parsedParams = idParamSchema.safeParse(request.params);
+  if (!parsedParams.success) {
     reply.code(400);
-    return { error: 'Invalid id' };
+    return { error: parsedParams.error.flatten() };
   }
+  const { id: todoId } = parsedParams.data;
 
   const [todo] = await db
     .select()
@@ -233,12 +233,12 @@ async function updateTodo(request, reply) {
     return { error: parsed.error.flatten() };
   }
 
-  const { id } = request.params;
-  const todoId = Number(id);
-  if (!Number.isInteger(todoId)) {
+  const parsedParams = idParamSchema.safeParse(request.params);
+  if (!parsedParams.success) {
     reply.code(400);
-    return { error: 'Invalid id' };
+    return { error: parsedParams.error.flatten() };
   }
+  const { id: todoId } = parsedParams.data;
 
   const [todo] = await db
     .update(todoItems)
@@ -256,12 +256,12 @@ async function updateTodo(request, reply) {
 }
 
 async function deleteTodo(request, reply) {
-  const { id } = request.params;
-  const todoId = Number(id);
-  if (!Number.isInteger(todoId)) {
+  const parsedParams = idParamSchema.safeParse(request.params);
+  if (!parsedParams.success) {
     reply.code(400);
-    return { error: 'Invalid id' };
+    return { error: parsedParams.error.flatten() };
   }
+  const { id: todoId } = parsedParams.data;
 
   const [todo] = await db.select().from(todoItems).where(eq(todoItems.id, todoId));
   if (!todo) {
@@ -273,12 +273,12 @@ async function deleteTodo(request, reply) {
 }
 
 async function postCompleteTodo(request, reply) {
-  const { id } = request.params;
-  const todoId = Number(id);
-  if (!Number.isInteger(todoId)) {
+  const parsedParams = idParamSchema.safeParse(request.params);
+  if (!parsedParams.success) {
     reply.code(400);
-    return { error: 'Invalid id' };
+    return { error: parsedParams.error.flatten() };
   }
+  const { id: todoId } = parsedParams.data;
   const [todo] = await db.select().from(todoItems).where(eq(todoItems.id, todoId));
   if (!todo) {
     reply.code(404);
@@ -306,12 +306,12 @@ async function addDependency(request, reply) {
 
   const { todoItemId } = parsed.data;
 
-  const { id } = request.params;
-  const todoId = Number(id);
-  if (!Number.isInteger(todoId)) {
+  const parsedParams = idParamSchema.safeParse(request.params);
+  if (!parsedParams.success) {
     reply.code(400);
-    return { error: 'Invalid id' };
+    return { error: parsedParams.error.flatten() };
   }
+  const { id: todoId } = parsedParams.data;
 
   if (todoId === todoItemId) {
     reply.code(400);
@@ -351,6 +351,10 @@ async function addDependency(request, reply) {
 
   return reply.status(204).send();
 }
+
+// async function removeDependency(request, reply) {
+//   const { id, dependencyId } = request.params;
+// }
 
 async function todoRoutes(fastify, options) {
   fastify.get('', listTodos);

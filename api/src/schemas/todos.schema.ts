@@ -62,3 +62,7 @@ export const listTodosQuerySchema = z.object({
 export const addDependencySchema = z.object({
   todoItemId: z.number().int().positive(),
 });
+
+export const idParamSchema = z.object({
+  id: z.coerce.number().int().positive(),
+});
