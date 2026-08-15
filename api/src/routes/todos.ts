@@ -208,7 +208,7 @@ async function listTodos(request, reply) {
 
 async function attachDependencies(todo) {
   const dependencies = await db
-    .select({ id: todoItems.id, name: todoItems.name })
+    .select({ id: todoItems.id, name: todoItems.name, status: todoItems.status })
     .from(todoItemDependencies)
     .innerJoin(todoItems, eq(todoItemDependencies.dependencyId, todoItems.id))
     .where(eq(todoItemDependencies.todoItemId, todo.id));

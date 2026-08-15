@@ -25,7 +25,9 @@ const recurType = ref<'daily' | 'weekly' | 'monthly' | 'yearly' | 'custom' | ''>
 );
 const recurValue = ref(props.todo?.recurValue ?? 1);
 
-const dependencies = ref<{ id: number; name: string }[]>(props.todo?.dependencies ?? []);
+const dependencies = ref<{ id: number; name: string; status: string }[]>(
+  props.todo?.dependencies ?? [],
+);
 
 const weekdayLabels = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 const weekdayValues = [0, 1, 2, 3, 4, 5, 6];
@@ -50,7 +52,7 @@ const isCustomRecurrenceIncomplete = computed(() => {
 const showErrorModal = ref(false);
 const errorMessage = ref('');
 
-async function addDependency(dependency: { id: number; name: string }) {
+async function addDependency(dependency: { id: number; name: string; status: string }) {
   const response = await fetch(`/api/todos/${todoId.value}/dependencies/${dependency.id}`, {
     method: 'POST',
   });

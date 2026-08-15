@@ -8,6 +8,11 @@ Pagination. Choosing cursor-based pagination, instead of offset-based.
 This is because, the "system should handle a TODO list with 10,000+ items".
 Cursor-based pagination is best for this time of rendering.
 
+Status changes specification.
+Dependencies only block changes to `in_progress`, but not block others like `completed`.
+This is the design decision, as if the task is already completed,
+then just let it be completed by bypassing the check of the dependencies.
+
 
 ## 2026-08-14
 
