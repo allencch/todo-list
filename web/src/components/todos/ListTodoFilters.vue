@@ -119,63 +119,67 @@ function setDueDateMax(value: string) {
     <slot />
   </div>
 
-  <div v-if="showPriorityFilter" class="flex items-center gap-2 px-4">
-    <button
-      class="rounded-full border px-3 py-1.5 text-sm whitespace-nowrap"
-      :class="
-        priority === 'low'
-          ? 'border-gray-900 bg-gray-900 text-white'
-          : 'border-gray-300 text-gray-600 hover:bg-gray-100'
-      "
-      @click="setPriority('low')"
-    >
-      Low
-    </button>
-    <button
-      class="rounded-full border px-3 py-1.5 text-sm whitespace-nowrap"
-      :class="
-        priority === 'medium'
-          ? 'border-gray-900 bg-gray-900 text-white'
-          : 'border-gray-300 text-gray-600 hover:bg-gray-100'
-      "
-      @click="setPriority('medium')"
-    >
-      Medium
-    </button>
-    <button
-      class="rounded-full border px-3 py-1.5 text-sm whitespace-nowrap"
-      :class="
-        priority === 'high'
-          ? 'border-gray-900 bg-gray-900 text-white'
-          : 'border-gray-300 text-gray-600 hover:bg-gray-100'
-      "
-      @click="setPriority('high')"
-    >
-      High
-    </button>
+  <div v-if="showPriorityFilter" class="flex items-center gap-4 px-4">
+    <div class="flex items-center gap-2">
+      <button
+        class="rounded-full border px-3 py-1.5 text-sm whitespace-nowrap"
+        :class="
+          priority === 'low'
+            ? 'border-gray-900 bg-gray-900 text-white'
+            : 'border-gray-300 text-gray-600 hover:bg-gray-100'
+        "
+        @click="setPriority('low')"
+      >
+        Low
+      </button>
+      <button
+        class="rounded-full border px-3 py-1.5 text-sm whitespace-nowrap"
+        :class="
+          priority === 'medium'
+            ? 'border-gray-900 bg-gray-900 text-white'
+            : 'border-gray-300 text-gray-600 hover:bg-gray-100'
+        "
+        @click="setPriority('medium')"
+      >
+        Medium
+      </button>
+      <button
+        class="rounded-full border px-3 py-1.5 text-sm whitespace-nowrap"
+        :class="
+          priority === 'high'
+            ? 'border-gray-900 bg-gray-900 text-white'
+            : 'border-gray-300 text-gray-600 hover:bg-gray-100'
+        "
+        @click="setPriority('high')"
+      >
+        High
+      </button>
+    </div>
 
-    <button
-      class="rounded-full border px-3 py-1.5 text-sm whitespace-nowrap"
-      :class="
-        dependencyStatus === 'blocked'
-          ? 'border-gray-900 bg-gray-900 text-white'
-          : 'border-gray-300 text-gray-600 hover:bg-gray-100'
-      "
-      @click="setDependencyStatus('blocked')"
-    >
-      Blocked
-    </button>
-    <button
-      class="rounded-full border px-3 py-1.5 text-sm whitespace-nowrap"
-      :class="
-        dependencyStatus === 'unblocked'
-          ? 'border-gray-900 bg-gray-900 text-white'
-          : 'border-gray-300 text-gray-600 hover:bg-gray-100'
-      "
-      @click="setDependencyStatus('unblocked')"
-    >
-      Unblocked
-    </button>
+    <div class="flex items-center gap-2">
+      <button
+        class="rounded-full border px-3 py-1.5 text-sm whitespace-nowrap"
+        :class="
+          dependencyStatus === 'blocked'
+            ? 'border-gray-900 bg-gray-900 text-white'
+            : 'border-gray-300 text-gray-600 hover:bg-gray-100'
+        "
+        @click="setDependencyStatus('blocked')"
+      >
+        Blocked
+      </button>
+      <button
+        class="rounded-full border px-3 py-1.5 text-sm whitespace-nowrap"
+        :class="
+          dependencyStatus === 'unblocked'
+            ? 'border-gray-900 bg-gray-900 text-white'
+            : 'border-gray-300 text-gray-600 hover:bg-gray-100'
+        "
+        @click="setDependencyStatus('unblocked')"
+      >
+        Unblocked
+      </button>
+    </div>
   </div>
 
   <div v-if="showPriorityFilter" class="flex items-center gap-2 px-4 mt-1 mb-2">
