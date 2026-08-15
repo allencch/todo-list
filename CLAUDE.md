@@ -59,11 +59,11 @@ Do not invent a new architecture when an existing pattern is sufficient.
 
 ## Testing
 
-Do not automatically run the entire test suite.
+Do not automatically run tests or type-checking (e.g. `tsc`).
 
-Only run tests when:
+Only run tests or `tsc` when:
 - I explicitly ask you to run them, or
-- the specific test command is necessary to verify the change I requested.
+- I explicitly ask you to verify the change.
 
 Prefer targeted tests over the full test suite.
 
