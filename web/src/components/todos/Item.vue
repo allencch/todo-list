@@ -75,14 +75,13 @@ function handleDelete(todo: TodoItem) {
 async function changeStatus(status: string) {
   if (status === props.todo.status) return;
 
-  const response =
-    status === 'completed'
-      ? await fetch(`/api/todos/${props.todo.id}/complete`, { method: 'POST' })
-      : await fetch(`/api/todos/${props.todo.id}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ status }),
-        });
+  const response = await fetch(`/api/todos/${props.todo.id}/status`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      status
+    }),
+  });
 
   if (!response.ok) {
     const body = await safeParseJson(response);
