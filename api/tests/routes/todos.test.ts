@@ -511,7 +511,7 @@ describe('PATCH /api/todos/:id', () => {
 });
 
 describe('DELETE /api/todos/:id', () => {
-  it('destroy a todo item', async () => {
+  it('soft deletes a todo item by setting deletedAt', async () => {
     const [seeded] = await db.insert(todoItems).values({ name: 'Test todo' }).returning();
     const response = await fastify.inject({
       method: 'DELETE',
@@ -520,7 +520,52 @@ describe('DELETE /api/todos/:id', () => {
     expect(response.statusCode).toBe(204);
 
     const [found] = await db.select().from(todoItems).where(eq(todoItems.id, seeded.id));
-    expect(found).toBeUndefined();
+    expect(found).toBeDefined();
+    expect(found.deletedAt).not.toBeNull();
+
+    await db.delete(todoItems).where(eq(todoItems.id, seeded.id));
+  });
+
+  it('excludes a deleted todo from the listing', async () => {
+    const [seeded] = await db
+      .insert(todoItems)
+      .values({ name: 'Delete listing test' })
+      .returning();
+
+    await fastify.inject({
+      method: 'DELETE',
+      url: `/api/todos/${seeded.id}`,
+    });
+
+    const response = await fastify.inject({
+      method: 'GET',
+      url: '/api/todos',
+      query: { content: 'Delete listing test' },
+    });
+
+    expect(response.statusCode).toBe(200);
+    const ids = response.json().map((todo) => todo.id);
+    expect(ids).not.toContain(seeded.id);
+
+    await db.delete(todoItems).where(eq(todoItems.id, seeded.id));
+  });
+
+  it('returns 404 when fetching a deleted todo by id', async () => {
+    const [seeded] = await db.insert(todoItems).values({ name: 'Test todo' }).returning();
+
+    await fastify.inject({
+      method: 'DELETE',
+      url: `/api/todos/${seeded.id}`,
+    });
+
+    const response = await fastify.inject({
+      method: 'GET',
+      url: `/api/todos/${seeded.id}`,
+    });
+
+    expect(response.statusCode).toBe(404);
+
+    await db.delete(todoItems).where(eq(todoItems.id, seeded.id));
   });
 });
 

@@ -136,7 +136,7 @@ async function listTodos(request, reply) {
     dependencyStatus,
   } = parsed.data;
 
-  const conditions = [];
+  const conditions = [isNull(todoItems.deletedAt)];
   if (status) conditions.push(eq(todoItems.status, status));
   if (priority) conditions.push(eq(todoItems.priority, priority));
   if (content) {
@@ -168,6 +168,7 @@ async function listTodos(request, reply) {
       .where(
         and(
           eq(todoItemDependencies.todoItemId, todoItems.id),
+          isNull(dependencyTodoItems.deletedAt),
           ne(dependencyTodoItems.status, 'completed')
         )
       );
@@ -178,7 +179,13 @@ async function listTodos(request, reply) {
       const anyDependencySubquery = db
         .select({ one: sql`1` })
         .from(todoItemDependencies)
-        .where(eq(todoItemDependencies.todoItemId, todoItems.id));
+        .innerJoin(dependencyTodoItems, eq(todoItemDependencies.dependencyId, dependencyTodoItems.id))
+        .where(
+          and(
+            eq(todoItemDependencies.todoItemId, todoItems.id),
+            isNull(dependencyTodoItems.deletedAt)
+          )
+        );
 
       conditions.push(and(exists(anyDependencySubquery), notExists(incompleteDependencySubquery)));
     }
@@ -251,7 +258,12 @@ async function attachDependencies(todos) {
     })
     .from(todoItemDependencies)
     .innerJoin(todoItems, eq(todoItemDependencies.dependencyId, todoItems.id))
-    .where(inArray(todoItemDependencies.todoItemId, todos.map((todo) => todo.id)));
+    .where(
+      and(
+        inArray(todoItemDependencies.todoItemId, todos.map((todo) => todo.id)),
+        isNull(todoItems.deletedAt)
+      )
+    );
 
   const dependenciesByTodoId = new Map();
   for (const { todoItemId, ...dependency } of links) {
@@ -278,7 +290,7 @@ async function getTodo(request, reply) {
   const [todo] = await db
     .select()
     .from(todoItems)
-    .where(eq(todoItems.id, todoId));
+    .where(and(eq(todoItems.id, todoId), isNull(todoItems.deletedAt)));
   if (!todo) {
     reply.code(404);
     return { error: 'Todo not found' };
@@ -306,7 +318,7 @@ async function updateTodo(request, reply) {
   const [todo] = await db
     .update(todoItems)
     .set(parsed.data)
-    .where(eq(todoItems.id, todoId))
+    .where(and(eq(todoItems.id, todoId), isNull(todoItems.deletedAt)))
     .returning();
 
   if (!todo) {
@@ -326,12 +338,15 @@ async function deleteTodo(request, reply) {
   }
   const { id: todoId } = parsedParams.data;
 
-  const [todo] = await db.select().from(todoItems).where(eq(todoItems.id, todoId));
+  const [todo] = await db
+    .select()
+    .from(todoItems)
+    .where(and(eq(todoItems.id, todoId), isNull(todoItems.deletedAt)));
   if (!todo) {
     reply.code(404);
     return { error: 'Todo not found' };
   }
-  await db.delete(todoItems).where(eq(todoItems.id, todoId));
+  await db.update(todoItems).set({ deletedAt: sql`now()` }).where(eq(todoItems.id, todoId));
   return reply.status(204).send();
 }
 
@@ -361,6 +376,7 @@ async function handleInProgressStatus(todo, reply) {
     .where(
       and(
         eq(todoItemDependencies.todoItemId, todo.id),
+        isNull(todoItems.deletedAt),
         notInArray(todoItems.status, ['completed'])
       )
     );
@@ -395,7 +411,10 @@ async function updateTodoStatus(request, reply) {
   }
   const { status } = parsed.data;
 
-  const [todo] = await db.select().from(todoItems).where(eq(todoItems.id, todoId));
+  const [todo] = await db
+    .select()
+    .from(todoItems)
+    .where(and(eq(todoItems.id, todoId), isNull(todoItems.deletedAt)));
   if (!todo) {
     reply.code(404);
     return { error: 'Todo not found' };
@@ -433,13 +452,19 @@ async function addDependency(request, reply) {
     return { error: 'A todo cannot depend on itself' };
   }
 
-  const [todo] = await db.select().from(todoItems).where(eq(todoItems.id, todoId));
+  const [todo] = await db
+    .select()
+    .from(todoItems)
+    .where(and(eq(todoItems.id, todoId), isNull(todoItems.deletedAt)));
   if (!todo) {
     reply.code(404);
     return { error: 'Todo not found' };
   }
 
-  const [dependency] = await db.select().from(todoItems).where(eq(todoItems.id, dependencyId));
+  const [dependency] = await db
+    .select()
+    .from(todoItems)
+    .where(and(eq(todoItems.id, dependencyId), isNull(todoItems.deletedAt)));
   if (!dependency) {
     reply.code(404);
     return { error: 'Dependency todo not found' };
@@ -476,13 +501,19 @@ async function removeDependency(request, reply) {
 
   const { id: todoId, dependencyId } = parsedParams.data;
 
-  const [todo] = await db.select().from(todoItems).where(eq(todoItems.id, todoId));
+  const [todo] = await db
+    .select()
+    .from(todoItems)
+    .where(and(eq(todoItems.id, todoId), isNull(todoItems.deletedAt)));
   if (!todo) {
     reply.code(404);
     return { error: 'Todo not found' };
   }
 
-  const [dependency] = await db.select().from(todoItems).where(eq(todoItems.id, dependencyId));
+  const [dependency] = await db
+    .select()
+    .from(todoItems)
+    .where(and(eq(todoItems.id, dependencyId), isNull(todoItems.deletedAt)));
   if (!dependency) {
     reply.code(404);
     return { error: 'Dependency todo not found' };
