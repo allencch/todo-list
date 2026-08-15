@@ -50,6 +50,13 @@
       "when": 1786722327904,
       "tag": "0006_fantastic_dorian_gray",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1786816386430,
+      "tag": "0007_misty_cobalt_man",
+      "breakpoints": true
     }
   ]
 }

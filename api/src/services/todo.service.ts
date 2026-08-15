@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm';
+import { eq, isNull } from 'drizzle-orm';
 import { db } from '@/db/client';
 import { todoItems, TodoItem } from '@/db/schema';
 import type { CustomRecurrence } from '@/modules/todo.types';
@@ -77,7 +77,7 @@ export async function completeTodo(todo: TodoItem) {
         recurCustom: todo.recurCustom,
         parentId: todo.id,
       })
-      .onConflictDoNothing({ target: todoItems.parentId });
+      .onConflictDoNothing({ target: todoItems.parentId, where: isNull(todoItems.deletedAt) });
   }
 
   return updated;

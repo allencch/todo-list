@@ -12,7 +12,7 @@ import {
   AnyPgColumn,
   primaryKey,
 } from 'drizzle-orm/pg-core';
-import { relations, InferSelectModel, InferInsertModel } from 'drizzle-orm';
+import { relations, InferSelectModel, InferInsertModel, isNull } from 'drizzle-orm';
 
 export const statusEnum = pgEnum('status', ['not_started', 'in_progress', 'completed', 'archived']);
 export const priorityEnum = pgEnum('priority', ['low', 'medium', 'high']);
@@ -42,15 +42,18 @@ export const todoItems = pgTable(
     dependentId: integer('dependent_id').references((): AnyPgColumn => todoItems.id, {
       onDelete: 'set null',
     }),
+    deletedAt: timestamp('deleted_at'),
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at')
       .defaultNow()
       .$onUpdate(() => new Date()),
   },
   (table) => ({
-    // TODO: convert to a partial unique index (.where(deletedAt IS NULL)) once soft delete is added,
-    // so a soft-deleted child doesn't block generating a new one for the same parent.
-    parentIdIdx: uniqueIndex('todo_items_parent_id_idx').on(table.parentId),
+    // Partial: excludes soft-deleted rows, so a soft-deleted child doesn't block
+    // generating a new one for the same parent.
+    parentIdIdx: uniqueIndex('todo_items_parent_id_idx')
+      .on(table.parentId)
+      .where(isNull(table.deletedAt)),
   }),
 );
 
