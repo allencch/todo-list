@@ -205,6 +205,16 @@ async function listTodos(request, reply) {
   return attachNextDueDates(rows);
 }
 
+async function attachDependencies(todo) {
+  const dependencies = await db
+    .select({ id: todoItems.id, name: todoItems.name })
+    .from(todoItemDependencies)
+    .innerJoin(todoItems, eq(todoItemDependencies.dependencyId, todoItems.id))
+    .where(eq(todoItemDependencies.todoItemId, todo.id));
+
+  return { ...todo, dependencies };
+}
+
 async function getTodo(request, reply) {
   const parsedParams = idParamSchema.safeParse(request.params);
   if (!parsedParams.success) {
@@ -223,7 +233,7 @@ async function getTodo(request, reply) {
   }
   reply.code(200);
   const [withNextDueDate] = await attachNextDueDates([todo]);
-  return withNextDueDate;
+  return attachDependencies(withNextDueDate);
 }
 
 async function updateTodo(request, reply) {
