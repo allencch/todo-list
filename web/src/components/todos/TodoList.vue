@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, nextTick } from 'vue';
+import { ref, computed, watch, onMounted, onBeforeUnmount, nextTick } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import Item from '@/components/todos/Item.vue';
 import AddItem from '@/components/todos/AddItem.vue';
@@ -14,7 +14,7 @@ const props = defineProps<{ search?: string }>();
 const route = useRoute();
 const router = useRouter();
 
-const PAGE_SIZE = 4;
+const PAGE_SIZE = 20;
 
 const todos = ref<TodoItem[]>([]);
 const filterState = ref<Record<string, string>>({ status: '' });
@@ -26,6 +26,8 @@ const editingTodo = ref<TodoItem | null>(null);
 const isCreating = computed(() => route.query.new === '1');
 
 const mainRef = ref<HTMLElement | null>(null);
+const listRef = ref<HTMLElement | null>(null);
+let listResizeObserver: ResizeObserver | null = null;
 
 async function fillViewportIfNeeded() {
   await nextTick();
@@ -89,7 +91,20 @@ function handleListScroll(event: Event) {
   }
 }
 
-onMounted(fetchTodos);
+onMounted(() => {
+  fetchTodos();
+
+  if (listRef.value) {
+    listResizeObserver = new ResizeObserver(() => {
+      fillViewportIfNeeded();
+    });
+    listResizeObserver.observe(listRef.value);
+  }
+});
+
+onBeforeUnmount(() => {
+  listResizeObserver?.disconnect();
+});
 
 function handleUpdate(todo: TodoItem) {
   const index = todos.value.findIndex((item) => item.id === todo.id);
@@ -163,7 +178,7 @@ function handlePanelSubmit() {
       <ListTodoSort @change="handleFilterChange" />
 
       <main ref="mainRef" class="flex-1 overflow-y-auto px-4 py-4" @scroll="handleListScroll">
-        <ul class="divide-y divide-gray-200 rounded-md border border-gray-300">
+        <ul ref="listRef" class="divide-y divide-gray-200 rounded-md border border-gray-300">
           <Item
             :todo="todo"
             v-for="todo in todos"
