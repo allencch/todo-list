@@ -43,8 +43,8 @@ function setDueDateMax(value: string) {
 </script>
 
 <template>
-  <div class="flex items-center gap-3 px-4">
-    <div class="flex flex-1 items-center gap-2 overflow-x-auto">
+  <div class="flex items-center gap-3 px-4 items-start">
+    <div class="flex flex-1 flex-wrap items-center gap-2">
       <button
         class="rounded-full border px-3 py-1.5 text-sm whitespace-nowrap"
         :class="
