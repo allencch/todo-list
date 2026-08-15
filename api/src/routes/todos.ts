@@ -1,4 +1,4 @@
-import { eq, asc, desc, inArray, and, or, ilike, gte, lte, sql } from 'drizzle-orm';
+import { eq, asc, desc, inArray, notInArray, and, or, ilike, gte, lte, sql } from 'drizzle-orm';
 import { todoItems, todoItemDependencies } from '@/db/schema';
 import { db } from '@/db/client';
 import { completeTodo } from '@/services/todo.service';
@@ -55,7 +55,8 @@ async function listTodos(request, reply) {
     return { error: parsed.error.flatten() };
   }
 
-  const { status, priority, content, dueDateMin, dueDateMax, sortBy, sortOrder } = parsed.data;
+  const { status, priority, content, dueDateMin, dueDateMax, sortBy, sortOrder, limit, excludeId } =
+    parsed.data;
 
   const conditions = [];
   if (status) conditions.push(eq(todoItems.status, status));
@@ -71,6 +72,16 @@ async function listTodos(request, reply) {
   if (dueDateMin) conditions.push(gte(todoItems.dueDate, dueDateMin));
   if (dueDateMax) conditions.push(lte(todoItems.dueDate, dueDateMax));
 
+  if (excludeId) {
+    const existingDependencies = await db
+      .select({ dependencyId: todoItemDependencies.dependencyId })
+      .from(todoItemDependencies)
+      .where(eq(todoItemDependencies.todoItemId, excludeId));
+
+    const excludedIds = [excludeId, ...existingDependencies.map((link) => link.dependencyId)];
+    conditions.push(notInArray(todoItems.id, excludedIds));
+  }
+
   const orderFn = sortOrder === 'asc' ? asc : desc;
   let orderBy;
   if (sortBy === 'priority') {
@@ -84,11 +95,16 @@ async function listTodos(request, reply) {
     orderBy = desc(todoItems.id);
   }
 
-  const todos = await db
+  let query = db
     .select()
     .from(todoItems)
     .where(conditions.length > 0 ? and(...conditions) : undefined)
-    .orderBy(orderBy);
+    .orderBy(orderBy)
+    .$dynamic();
+
+  if (limit) query = query.limit(limit);
+
+  const todos = await query;
 
   reply.code(200);
   return attachNextDueDates(todos);

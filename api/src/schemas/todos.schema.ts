@@ -53,6 +53,8 @@ export const listTodosQuerySchema = z.object({
   dueDateMax: z.coerce.date().optional(),
   sortBy: z.enum(['dueDate', 'priority', 'status', 'name', 'createdAt']).optional(),
   sortOrder: z.enum(['asc', 'desc']).optional(),
+  limit: z.coerce.number().int().positive().max(50).optional(),
+  excludeId: z.coerce.number().int().positive().optional(),
 });
 
 export const addDependencySchema = z.object({
