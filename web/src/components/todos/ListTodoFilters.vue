@@ -8,6 +8,7 @@ const emit = defineEmits<{
 
 const status = ref('');
 const priority = ref('');
+const dependencyStatus = ref('');
 const dueDateMin = ref('');
 const dueDateMax = ref('');
 const showPriorityFilter = ref(false);
@@ -18,6 +19,7 @@ function emitChange() {
     priority: priority.value,
     dueDateMin: dueDateMin.value,
     dueDateMax: dueDateMax.value,
+    dependencyStatus: dependencyStatus.value,
   });
 }
 
@@ -28,6 +30,11 @@ function setStatus(value: string) {
 
 function setPriority(value: string) {
   priority.value = value;
+  emitChange();
+}
+
+function setDependencyStatus(value: string) {
+  dependencyStatus.value = dependencyStatus.value === value ? '' : value;
   emitChange();
 }
 
@@ -157,9 +164,32 @@ function setDueDateMax(value: string) {
     >
       High
     </button>
+
+    <button
+      class="rounded-full border px-3 py-1.5 text-sm whitespace-nowrap"
+      :class="
+        dependencyStatus === 'blocked'
+          ? 'border-gray-900 bg-gray-900 text-white'
+          : 'border-gray-300 text-gray-600 hover:bg-gray-100'
+      "
+      @click="setDependencyStatus('blocked')"
+    >
+      Blocked
+    </button>
+    <button
+      class="rounded-full border px-3 py-1.5 text-sm whitespace-nowrap"
+      :class="
+        dependencyStatus === 'unblocked'
+          ? 'border-gray-900 bg-gray-900 text-white'
+          : 'border-gray-300 text-gray-600 hover:bg-gray-100'
+      "
+      @click="setDependencyStatus('unblocked')"
+    >
+      Unblocked
+    </button>
   </div>
 
-  <div v-if="showPriorityFilter" class="flex items-center gap-2 px-4 mt-1">
+  <div v-if="showPriorityFilter" class="flex items-center gap-2 px-4 mt-1 mb-2">
     <label class="flex items-center gap-2 text-sm text-gray-600">
       Due from
       <input
