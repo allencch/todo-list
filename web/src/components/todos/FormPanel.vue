@@ -3,6 +3,7 @@ import { ref, computed } from 'vue';
 import type { TodoItem } from '@/types/todo';
 import ErrorModal from '@/components/shared/ErrorModal.vue';
 import DaySelection from './DaySelection.vue';
+import TodoDependencies from './TodoDependencies.vue';
 import { safeParseJson, buildErrorMessage } from '@/utils/http';
 
 const props = defineProps<{ todo?: TodoItem }>();
@@ -23,6 +24,18 @@ const recurType = ref<'daily' | 'weekly' | 'monthly' | 'yearly' | 'custom' | ''>
   (props.todo?.recurType as 'daily' | 'weekly' | 'monthly' | 'yearly' | 'custom') ?? '',
 );
 const recurValue = ref(props.todo?.recurValue ?? 1);
+
+const dependencies = ref<{ id: number; name: string }[]>([]);
+
+function addDependency(dependency: { id: number; name: string }) {
+  if (!dependencies.value.some((d) => d.id === dependency.id)) {
+    dependencies.value.push(dependency);
+  }
+}
+
+function removeDependency(dependencyId: number) {
+  dependencies.value = dependencies.value.filter((d) => d.id !== dependencyId);
+}
 
 const weekdayLabels = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 const weekdayValues = [0, 1, 2, 3, 4, 5, 6];
@@ -192,6 +205,14 @@ async function handleSubmit() {
           </button>
         </div>
       </form>
+
+    <TodoDependencies
+      class="mt-3"
+      :exclude-id="todoId ?? 0"
+      :dependencies="dependencies"
+      @select="addDependency"
+      @remove="removeDependency"
+    />
   </div>
 
   <ErrorModal
