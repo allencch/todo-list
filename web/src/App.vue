@@ -11,7 +11,7 @@ function handleSearch() {
 </script>
 
 <template>
-  <div class="mx-auto flex min-h-screen max-w-2xl flex-col border-x border-gray-200">
+  <div class="mx-32 flex h-screen flex-col">
     <header class="flex items-center gap-3 p-4">
       <input
         type="text"

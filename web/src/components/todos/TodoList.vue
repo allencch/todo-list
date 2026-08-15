@@ -106,31 +106,40 @@ function handlePanelSubmit() {
 </script>
 
 <template>
-  <ListTodoFilters @change="handleFilterChange">
-    <AddItem />
-  </ListTodoFilters>
+  <div class="flex flex-1 overflow-hidden">
+    <div class="flex w-3/5 flex-col overflow-hidden border-r border-gray-200">
+      <ListTodoFilters @change="handleFilterChange">
+        <AddItem />
+      </ListTodoFilters>
 
-  <ListTodoSort @change="handleFilterChange" />
+      <ListTodoSort @change="handleFilterChange" />
 
-  <main class="flex-1 overflow-y-auto px-4 py-4">
-    <ul class="divide-y divide-gray-200 rounded-md border border-gray-300">
-      <Item
-        :todo="todo"
-        v-for="todo in todos"
-        :key="todo.id"
-        @submit="handleUpdate"
-        @delete="handleDelete"
-        @complete="fetchTodos"
+      <main class="flex-1 overflow-y-auto px-4 py-4">
+        <ul class="divide-y divide-gray-200 rounded-md border border-gray-300">
+          <Item
+            :todo="todo"
+            v-for="todo in todos"
+            :key="todo.id"
+            @submit="handleUpdate"
+            @delete="handleDelete"
+            @complete="fetchTodos"
+          />
+        </ul>
+      </main>
+    </div>
+
+    <div class="flex w-2/5 flex-col overflow-y-auto">
+      <FormModal
+        v-if="editingTodo || isCreating"
+        :todo="editingTodo ?? undefined"
+        @close="closePanel"
+        @submit="handlePanelSubmit"
       />
-    </ul>
-  </main>
-
-  <FormModal
-    v-if="editingTodo || isCreating"
-    :todo="editingTodo ?? undefined"
-    @close="closePanel"
-    @submit="handlePanelSubmit"
-  />
+      <div v-else class="flex h-full items-center justify-center p-4 text-sm text-gray-400">
+        Select a todo to view details
+      </div>
+    </div>
+  </div>
 
   <ErrorModal v-if="error" :message="error" @close="error = ''" />
 </template>
