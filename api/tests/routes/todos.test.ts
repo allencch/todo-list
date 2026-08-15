@@ -406,7 +406,7 @@ describe('POST /api/todos/:id/complete', () => {
   });
 });
 
-describe('POST /api/todos/:id/dependencies', () => {
+describe('POST /api/todos/:id/dependencies/:dependencyId', () => {
   it('adds a dependency to a todo item', async () => {
     const [todo] = await db.insert(todoItems).values({ name: 'Build frontend' }).returning();
     const [dependency] = await db
@@ -416,8 +416,7 @@ describe('POST /api/todos/:id/dependencies', () => {
 
     const response = await fastify.inject({
       method: 'POST',
-      url: `/api/todos/${todo.id}/dependencies`,
-      payload: { todoItemId: dependency.id },
+      url: `/api/todos/${todo.id}/dependencies/${dependency.id}`,
     });
 
     expect(response.statusCode).toBe(204);
@@ -434,6 +433,40 @@ describe('POST /api/todos/:id/dependencies', () => {
     expect(link).toBeDefined();
 
     await db.delete(todoItemDependencies).where(eq(todoItemDependencies.todoItemId, todo.id));
+    await db.delete(todoItems).where(eq(todoItems.id, todo.id));
+    await db.delete(todoItems).where(eq(todoItems.id, dependency.id));
+  });
+});
+
+describe('DELETE /api/todos/:id/dependencies/:dependencyId', () => {
+  it('removes a dependency from a todo item', async () => {
+    const [todo] = await db.insert(todoItems).values({ name: 'Build frontend' }).returning();
+    const [dependency] = await db
+      .insert(todoItems)
+      .values({ name: 'Design frontend' })
+      .returning();
+    await db
+      .insert(todoItemDependencies)
+      .values({ todoItemId: todo.id, dependencyId: dependency.id });
+
+    const response = await fastify.inject({
+      method: 'DELETE',
+      url: `/api/todos/${todo.id}/dependencies/${dependency.id}`,
+    });
+
+    expect(response.statusCode).toBe(204);
+
+    const [link] = await db
+      .select()
+      .from(todoItemDependencies)
+      .where(
+        and(
+          eq(todoItemDependencies.todoItemId, todo.id),
+          eq(todoItemDependencies.dependencyId, dependency.id),
+        ),
+      );
+    expect(link).toBeUndefined();
+
     await db.delete(todoItems).where(eq(todoItems.id, todo.id));
     await db.delete(todoItems).where(eq(todoItems.id, dependency.id));
   });
