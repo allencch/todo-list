@@ -377,8 +377,8 @@ describe('DELETE /api/todos/:id', () => {
   });
 });
 
-describe('POST /api/todos/:id/complete', () => {
-  it('mark the todo to complete and create new recurring todo', async () => {
+describe('POST /api/todos/:id/status', () => {
+  it('marks the todo completed and creates new recurring todo', async () => {
     const [seeded] = await db
       .insert(todoItems)
       .values({
@@ -390,7 +390,8 @@ describe('POST /api/todos/:id/complete', () => {
 
     const response = await fastify.inject({
       method: 'POST',
-      url: `/api/todos/${seeded.id}/complete`,
+      url: `/api/todos/${seeded.id}/status`,
+      payload: { status: 'completed' },
     });
 
     expect(response.statusCode).toBe(200);
@@ -403,6 +404,71 @@ describe('POST /api/todos/:id/complete', () => {
 
     await db.delete(todoItems).where(eq(todoItems.id, child.id));
     await db.delete(todoItems).where(eq(todoItems.id, seeded.id));
+  });
+
+  it('changes status to in_progress when there are no dependencies', async () => {
+    const [todo] = await db.insert(todoItems).values({ name: 'Ready to start' }).returning();
+
+    const response = await fastify.inject({
+      method: 'POST',
+      url: `/api/todos/${todo.id}/status`,
+      payload: { status: 'in_progress' },
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json().status).toBe('in_progress');
+
+    await db.delete(todoItems).where(eq(todoItems.id, todo.id));
+  });
+
+  it('rejects changing to in_progress when a dependency is not completed', async () => {
+    const [todo] = await db.insert(todoItems).values({ name: 'Blocked todo' }).returning();
+    const [dependency] = await db
+      .insert(todoItems)
+      .values({ name: 'Unfinished dependency' })
+      .returning();
+    await db
+      .insert(todoItemDependencies)
+      .values({ todoItemId: todo.id, dependencyId: dependency.id });
+
+    const response = await fastify.inject({
+      method: 'POST',
+      url: `/api/todos/${todo.id}/status`,
+      payload: { status: 'in_progress' },
+    });
+
+    expect(response.statusCode).toBe(400);
+
+    const [unchanged] = await db.select().from(todoItems).where(eq(todoItems.id, todo.id));
+    expect(unchanged.status).toBe('not_started');
+
+    await db.delete(todoItemDependencies).where(eq(todoItemDependencies.todoItemId, todo.id));
+    await db.delete(todoItems).where(eq(todoItems.id, todo.id));
+    await db.delete(todoItems).where(eq(todoItems.id, dependency.id));
+  });
+
+  it('allows changing to in_progress when all dependencies are completed', async () => {
+    const [todo] = await db.insert(todoItems).values({ name: 'Unblocked todo' }).returning();
+    const [dependency] = await db
+      .insert(todoItems)
+      .values({ name: 'Finished dependency', status: 'completed' })
+      .returning();
+    await db
+      .insert(todoItemDependencies)
+      .values({ todoItemId: todo.id, dependencyId: dependency.id });
+
+    const response = await fastify.inject({
+      method: 'POST',
+      url: `/api/todos/${todo.id}/status`,
+      payload: { status: 'in_progress' },
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json().status).toBe('in_progress');
+
+    await db.delete(todoItemDependencies).where(eq(todoItemDependencies.todoItemId, todo.id));
+    await db.delete(todoItems).where(eq(todoItems.id, todo.id));
+    await db.delete(todoItems).where(eq(todoItems.id, dependency.id));
   });
 });
 
