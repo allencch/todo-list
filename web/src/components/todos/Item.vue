@@ -63,7 +63,8 @@ const showErrorModal = ref(false);
 const errorMessage = ref('');
 
 function openEdit() {
-  router.push({ query: { ...route.query, edit: String(props.todo.id) } });
+  const { new: _new, ...rest } = route.query;
+  router.push({ query: { ...rest, edit: String(props.todo.id) } });
 }
 
 function handleDelete(todo: TodoItem) {

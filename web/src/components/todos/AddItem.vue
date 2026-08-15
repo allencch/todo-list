@@ -5,7 +5,8 @@ const route = useRoute();
 const router = useRouter();
 
 function openCreate() {
-  router.push({ query: { ...route.query, new: '1' } });
+  const { edit, ...rest } = route.query;
+  router.push({ query: { ...rest, new: '1' } });
 }
 </script>
 
