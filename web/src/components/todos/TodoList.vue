@@ -5,7 +5,7 @@ import Item from '@/components/todos/Item.vue';
 import AddItem from '@/components/todos/AddItem.vue';
 import ListTodoFilters from '@/components/todos/ListTodoFilters.vue';
 import ListTodoSort from '@/components/todos/ListTodoSort.vue';
-import FormModal from '@/components/todos/FormModal.vue';
+import FormPanel from '@/components/todos/FormPanel.vue';
 import ErrorModal from '@/components/shared/ErrorModal.vue';
 import type { TodoItem } from '@/types/todo';
 
@@ -178,7 +178,7 @@ function handlePanelSubmit() {
     </div>
 
     <div class="flex w-2/5 flex-col overflow-y-auto">
-      <FormModal
+      <FormPanel
         v-if="editingTodo || isCreating"
         :key="editingTodo?.id ?? 'new'"
         :todo="editingTodo ?? undefined"
