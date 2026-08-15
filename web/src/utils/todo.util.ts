@@ -1,4 +1,19 @@
+import { Circle, CircleDot, CircleCheck, Archive } from '@lucide/vue';
 import type { CustomRecurrence } from '@/types/todo';
+
+export const statusIcons: Record<string, unknown> = {
+  not_started: Circle,
+  in_progress: CircleDot,
+  completed: CircleCheck,
+  archived: Archive,
+};
+
+export const statusColors: Record<string, string> = {
+  not_started: 'text-gray-400',
+  in_progress: 'text-blue-500',
+  completed: 'text-green-500',
+  archived: 'text-gray-400',
+};
 
 const recurUnitNouns: Record<string, string> = {
   daily: 'day',

@@ -1,23 +1,13 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import {
-  Pencil,
-  ChevronRight,
-  Trash2,
-  Flag,
-  Circle,
-  CircleDot,
-  CircleCheck,
-  Archive,
-  Repeat,
-} from '@lucide/vue';
+import { Pencil, ChevronRight, Trash2, Flag, Repeat } from '@lucide/vue';
 import type { TodoItem } from '@/types/todo';
 import DeleteModal from './DeleteModal.vue';
 import DependencyList from './DependencyList.vue';
 import ErrorModal from '@/components/shared/ErrorModal.vue';
 import { safeParseJson, buildErrorMessage } from '@/utils/http';
-import { recurLabel } from '@/utils/todo.util.ts';
+import { recurLabel, statusIcons, statusColors } from '@/utils/todo.util.ts';
 
 const props = defineProps<{ todo: TodoItem }>();
 
@@ -31,20 +21,6 @@ const priorityColors: Record<string, string> = {
   high: 'text-red-500',
   medium: 'text-amber-500',
   low: 'text-blue-500',
-};
-
-const statusIcons: Record<string, unknown> = {
-  not_started: Circle,
-  in_progress: CircleDot,
-  completed: CircleCheck,
-  archived: Archive,
-};
-
-const statusColors: Record<string, string> = {
-  not_started: 'text-gray-400',
-  in_progress: 'text-blue-500',
-  completed: 'text-green-500',
-  archived: 'text-gray-400',
 };
 
 function humanize(value: string) {

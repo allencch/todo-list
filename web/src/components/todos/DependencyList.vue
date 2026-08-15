@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Circle, CircleDot, CircleCheck, Archive } from '@lucide/vue';
+import { statusIcons, statusColors } from '@/utils/todo.util.ts';
 
 type DependencyOption = { id: number; name: string; status: string };
 
@@ -14,20 +14,6 @@ withDefaults(
 const emit = defineEmits<{
   remove: [dependencyId: number];
 }>();
-
-const statusIcons: Record<string, unknown> = {
-  not_started: Circle,
-  in_progress: CircleDot,
-  completed: CircleCheck,
-  archived: Archive,
-};
-
-const statusColors: Record<string, string> = {
-  not_started: 'text-gray-400',
-  in_progress: 'text-blue-500',
-  completed: 'text-green-500',
-  archived: 'text-gray-400',
-};
 </script>
 
 <template>
