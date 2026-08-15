@@ -14,6 +14,7 @@ import {
 } from '@lucide/vue';
 import type { TodoItem } from '@/types/todo';
 import DeleteModal from './DeleteModal.vue';
+import DependencyList from './DependencyList.vue';
 import ErrorModal from '@/components/shared/ErrorModal.vue';
 import { safeParseJson, buildErrorMessage } from '@/utils/http';
 import { recurLabel } from '@/utils/todo.util.ts';
@@ -217,6 +218,10 @@ async function changePriority(priority: string | null) {
         >
           {{ priority ? humanize(priority) : 'None' }}
         </button>
+      </div>
+      <div v-if="todo.dependencies?.length" class="mt-2">
+        <p class="mb-1 text-xs font-medium text-gray-700">Dependencies</p>
+        <DependencyList :dependencies="todo.dependencies" readonly />
       </div>
     </div>
 

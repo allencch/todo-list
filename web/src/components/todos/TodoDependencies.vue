@@ -1,11 +1,6 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue';
-import {
-  Circle,
-  CircleDot,
-  CircleCheck,
-  Archive,
-} from '@lucide/vue';
+import DependencyList from './DependencyList.vue';
 
 type DependencyOption = { id: number; name: string; status: string };
 
@@ -23,20 +18,6 @@ const query = ref('');
 const results = ref<DependencyOption[]>([]);
 const showResults = ref(false);
 let searchTimeout: ReturnType<typeof setTimeout> | undefined;
-
-const statusIcons: Record<string, unknown> = {
-  not_started: Circle,
-  in_progress: CircleDot,
-  completed: CircleCheck,
-  archived: Archive,
-};
-
-const statusColors: Record<string, string> = {
-  not_started: 'text-gray-400',
-  in_progress: 'text-blue-500',
-  completed: 'text-green-500',
-  archived: 'text-gray-400',
-};
 
 async function search() {
   if (!query.value.trim()) {
@@ -94,26 +75,6 @@ function selectResult(result: DependencyOption) {
       </ul>
     </div>
 
-    <div class="flex flex-wrap gap-2">
-      <span
-        v-for="dependency in dependencies"
-        :key="dependency.id"
-        class="flex items-center gap-1 rounded-full border border-gray-300 px-3 py-1 text-sm"
-      >
-        <component
-          :is="statusIcons[dependency.status]"
-          class="h-4 w-4 shrink-0"
-          :class="statusColors[dependency.status]"
-        />
-        {{ dependency.name }}
-        <button
-          type="button"
-          class="text-gray-400 hover:text-gray-700"
-          @click="emit('remove', dependency.id)"
-        >
-          x
-        </button>
-      </span>
-    </div>
+    <DependencyList :dependencies="dependencies" @remove="emit('remove', $event)" />
   </div>
 </template>
