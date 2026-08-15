@@ -27,6 +27,29 @@ const recurValue = ref(props.todo?.recurValue ?? 1);
 
 const dependencies = ref<{ id: number; name: string }[]>(props.todo?.dependencies ?? []);
 
+const weekdayLabels = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+const weekdayValues = [0, 1, 2, 3, 4, 5, 6];
+const monthDayValues = Array.from({ length: 31 }, (_, i) => i + 1);
+
+const customBasis = ref<'weekly' | 'monthly'>(props.todo?.recurCustom?.type ?? 'weekly');
+const customWeekdays = ref<number[]>(
+  props.todo?.recurCustom?.type === 'weekly' ? [...props.todo.recurCustom.weekdays] : [],
+);
+const customMonthDays = ref<number[]>(
+  props.todo?.recurCustom?.type === 'monthly' ? [...props.todo.recurCustom.monthDays] : [],
+);
+
+const isCustomRecurrenceIncomplete = computed(() => {
+  return (
+    recurType.value === 'custom' &&
+    ((customBasis.value === 'weekly' && customWeekdays.value.length === 0) ||
+      (customBasis.value === 'monthly' && customMonthDays.value.length === 0))
+  );
+});
+
+const showErrorModal = ref(false);
+const errorMessage = ref('');
+
 async function addDependency(dependency: { id: number; name: string }) {
   const response = await fetch(`/api/todos/${todoId.value}/dependencies/${dependency.id}`, {
     method: 'POST',
@@ -58,29 +81,6 @@ async function removeDependency(dependencyId: number) {
 
   dependencies.value = dependencies.value.filter((d) => d.id !== dependencyId);
 }
-
-const weekdayLabels = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
-const weekdayValues = [0, 1, 2, 3, 4, 5, 6];
-const monthDayValues = Array.from({ length: 31 }, (_, i) => i + 1);
-
-const customBasis = ref<'weekly' | 'monthly'>(props.todo?.recurCustom?.type ?? 'weekly');
-const customWeekdays = ref<number[]>(
-  props.todo?.recurCustom?.type === 'weekly' ? [...props.todo.recurCustom.weekdays] : [],
-);
-const customMonthDays = ref<number[]>(
-  props.todo?.recurCustom?.type === 'monthly' ? [...props.todo.recurCustom.monthDays] : [],
-);
-
-const isCustomRecurrenceIncomplete = computed(() => {
-  return (
-    recurType.value === 'custom' &&
-    ((customBasis.value === 'weekly' && customWeekdays.value.length === 0) ||
-      (customBasis.value === 'monthly' && customMonthDays.value.length === 0))
-  );
-});
-
-const showErrorModal = ref(false);
-const errorMessage = ref('');
 
 function buildRecurFields() {
   if (!recurType.value) {
@@ -229,8 +229,9 @@ async function handleSubmit() {
       </form>
 
     <TodoDependencies
+      v-if="todoId"
       class="mt-3"
-      :exclude-id="todoId ?? 0"
+      :exclude-id="todoId"
       :dependencies="dependencies"
       @select="addDependency"
       @remove="removeDependency"
