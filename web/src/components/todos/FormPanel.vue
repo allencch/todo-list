@@ -146,7 +146,7 @@ async function handleSubmit() {
 
 <template>
   <div class="h-full overflow-y-auto p-4">
-    <h2 class="mb-3 text-lg font-medium">{{ todo ? 'Edit todo' : 'New todo' }}</h2>
+    <h2 class="mb-3 text-lg font-semibold">{{ todo ? `Edit todo: ${name}` : 'New todo' }}</h2>
 
     <form class="flex flex-col gap-3" @submit.prevent="handleSubmit">
         <input

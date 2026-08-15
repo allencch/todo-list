@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useRoute, useRouter } from 'vue-router';
 import { statusIcons, statusColors } from '@/utils/todo.util.ts';
 
 type DependencyOption = { id: number; name: string; status: string };
@@ -14,6 +15,14 @@ withDefaults(
 const emit = defineEmits<{
   remove: [dependencyId: number];
 }>();
+
+const route = useRoute();
+const router = useRouter();
+
+function openEdit(dependencyId: number) {
+  const { new: _new, ...rest } = route.query;
+  router.push({ query: { ...rest, edit: String(dependencyId) } });
+}
 </script>
 
 <template>
@@ -23,11 +32,18 @@ const emit = defineEmits<{
       :key="dependency.id"
       class="flex items-center gap-1 rounded-full border border-gray-300 px-3 py-1 text-sm"
     >
-      <component
-        :is="statusIcons[dependency.status]"
-        class="h-4 w-4 shrink-0"
-        :class="statusColors[dependency.status]"
-      />
+      <button
+        type="button"
+        :aria-label="`Edit ${dependency.name}`"
+        class="cursor-pointer"
+        @click="openEdit(dependency.id)"
+      >
+        <component
+          :is="statusIcons[dependency.status]"
+          class="h-4 w-4 shrink-0"
+          :class="statusColors[dependency.status]"
+        />
+      </button>
       {{ dependency.name }}
       <button
         v-if="!readonly"

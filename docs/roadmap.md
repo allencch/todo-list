@@ -24,11 +24,12 @@ Web:
 - [x] Initial page
 - [x] Frontend CRUD
 - [x] Desktop design
-- [ ] Responsive for mobile
 - [x] Error handling
 - [x] Filtering
-- [ ] Toast
 - [x] Route
+- [ ] Responsive for mobile
+- [ ] Toast
+- [ ] Item editing should have indicator
 
 
 ## Extra features
