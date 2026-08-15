@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue';
+import { ref, computed, watch, onMounted, nextTick } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import Item from '@/components/todos/Item.vue';
 import AddItem from '@/components/todos/AddItem.vue';
@@ -14,12 +14,27 @@ const props = defineProps<{ search?: string }>();
 const route = useRoute();
 const router = useRouter();
 
+const PAGE_SIZE = 4;
+
 const todos = ref<TodoItem[]>([]);
 const filterState = ref<Record<string, string>>({ status: '' });
 const error = ref('');
+const nextCursor = ref<string | null>(null);
+const isLoadingMore = ref(false);
 
 const editingTodo = ref<TodoItem | null>(null);
 const isCreating = computed(() => route.query.new === '1');
+
+const mainRef = ref<HTMLElement | null>(null);
+
+async function fillViewportIfNeeded() {
+  await nextTick();
+  const el = mainRef.value;
+  while (el && nextCursor.value && el.scrollHeight <= el.clientHeight) {
+    await loadMoreTodos();
+    await nextTick();
+  }
+}
 
 function sanitizeQueryParams() {
   const cleanedParams = Object.fromEntries(
@@ -31,13 +46,46 @@ function sanitizeQueryParams() {
 async function fetchTodos() {
   try {
     const params = new URLSearchParams(sanitizeQueryParams());
+    params.set('pageSize', String(PAGE_SIZE));
     const response = await fetch(`/api/todos?${params}`);
     if (!response.ok) {
       throw new Error(`Failed to load todos (${response.status})`);
     }
-    todos.value = await response.json();
+    const body = await response.json();
+    todos.value = body.data;
+    nextCursor.value = body.nextCursor;
+    fillViewportIfNeeded();
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'Failed to load todos';
+  }
+}
+
+async function loadMoreTodos() {
+  if (!nextCursor.value || isLoadingMore.value) return;
+
+  isLoadingMore.value = true;
+  try {
+    const params = new URLSearchParams(sanitizeQueryParams());
+    params.set('pageSize', String(PAGE_SIZE));
+    params.set('cursor', nextCursor.value);
+    const response = await fetch(`/api/todos?${params}`);
+    if (!response.ok) {
+      throw new Error(`Failed to load todos (${response.status})`);
+    }
+    const body = await response.json();
+    todos.value.push(...body.data);
+    nextCursor.value = body.nextCursor;
+  } catch (err) {
+    error.value = err instanceof Error ? err.message : 'Failed to load todos';
+  } finally {
+    isLoadingMore.value = false;
+  }
+}
+
+function handleListScroll(event: Event) {
+  const el = event.target as HTMLElement;
+  if (el.scrollTop + el.clientHeight >= el.scrollHeight - 200) {
+    loadMoreTodos();
   }
 }
 
@@ -114,7 +162,7 @@ function handlePanelSubmit() {
 
       <ListTodoSort @change="handleFilterChange" />
 
-      <main class="flex-1 overflow-y-auto px-4 py-4">
+      <main ref="mainRef" class="flex-1 overflow-y-auto px-4 py-4" @scroll="handleListScroll">
         <ul class="divide-y divide-gray-200 rounded-md border border-gray-300">
           <Item
             :todo="todo"
@@ -125,6 +173,7 @@ function handlePanelSubmit() {
             @complete="fetchTodos"
           />
         </ul>
+        <p v-if="isLoadingMore" class="py-3 text-center text-sm text-gray-400">Loading more...</p>
       </main>
     </div>
 
