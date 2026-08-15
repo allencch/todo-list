@@ -35,6 +35,7 @@ Web:
 
 - [ ] API rate-limit
 - [ ] Frontend dark/light theme toggle
+- [ ] Create new todo allows to add depency at the same time
 - [ ] Keyboard navigations and shortcut
 - [ ] Web socket? Update content with PUSH
 - [ ] org-mode import/export

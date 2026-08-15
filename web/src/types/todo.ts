@@ -13,4 +13,5 @@ export interface TodoItem {
   recurValue?: number | null;
   recurCustom?: CustomRecurrence | null;
   nextDueDate?: string | null;
+  dependencies?: { id: number; name: string }[];
 }

@@ -25,15 +25,37 @@ const recurType = ref<'daily' | 'weekly' | 'monthly' | 'yearly' | 'custom' | ''>
 );
 const recurValue = ref(props.todo?.recurValue ?? 1);
 
-const dependencies = ref<{ id: number; name: string }[]>([]);
+const dependencies = ref<{ id: number; name: string }[]>(props.todo?.dependencies ?? []);
 
-function addDependency(dependency: { id: number; name: string }) {
+async function addDependency(dependency: { id: number; name: string }) {
+  const response = await fetch(`/api/todos/${todoId.value}/dependencies/${dependency.id}`, {
+    method: 'POST',
+  });
+
+  if (!response.ok) {
+    const body = await safeParseJson(response);
+    errorMessage.value = buildErrorMessage(body);
+    showErrorModal.value = true;
+    return;
+  }
+
   if (!dependencies.value.some((d) => d.id === dependency.id)) {
     dependencies.value.push(dependency);
   }
 }
 
-function removeDependency(dependencyId: number) {
+async function removeDependency(dependencyId: number) {
+  const response = await fetch(`/api/todos/${todoId.value}/dependencies/${dependencyId}`, {
+    method: 'DELETE',
+  });
+
+  if (!response.ok) {
+    const body = await safeParseJson(response);
+    errorMessage.value = buildErrorMessage(body);
+    showErrorModal.value = true;
+    return;
+  }
+
   dependencies.value = dependencies.value.filter((d) => d.id !== dependencyId);
 }
 
