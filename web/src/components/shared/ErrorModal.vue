@@ -7,7 +7,7 @@ const emit = defineEmits<{
 
 <template>
   <div
-    class="fixed inset-0 flex items-center justify-center bg-black/50"
+    class="fixed inset-0 flex items-center justify-center bg-black/50 z-10"
     @click.self="emit('close')"
   >
     <div class="w-full max-w-sm rounded-md bg-white p-4">
