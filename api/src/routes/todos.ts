@@ -21,7 +21,6 @@ import {
   createTodoSchema,
   updateTodoSchema,
   listTodosQuerySchema,
-  addDependencySchema,
   idParamSchema,
   dependencyParamSchema,
 } from '@/schemas/todos.schema.js';
@@ -299,22 +298,15 @@ async function postCompleteTodo(request, reply) {
 }
 
 async function addDependency(request, reply) {
-  const parsed = addDependencySchema.safeParse(request.body);
+  const parsed = dependencyParamSchema.safeParse(request.params);
   if (!parsed.success) {
     reply.code(400);
     return { error: parsed.error.flatten() };
   }
 
-  const { todoItemId } = parsed.data;
+  const { id: todoId, dependencyId } = parsed.data;
 
-  const parsedParams = idParamSchema.safeParse(request.params);
-  if (!parsedParams.success) {
-    reply.code(400);
-    return { error: parsedParams.error.flatten() };
-  }
-  const { id: todoId } = parsedParams.data;
-
-  if (todoId === todoItemId) {
+  if (todoId === dependencyId) {
     reply.code(400);
     return { error: 'A todo cannot depend on itself' };
   }
@@ -325,7 +317,7 @@ async function addDependency(request, reply) {
     return { error: 'Todo not found' };
   }
 
-  const [dependency] = await db.select().from(todoItems).where(eq(todoItems.id, todoItemId));
+  const [dependency] = await db.select().from(todoItems).where(eq(todoItems.id, dependencyId));
   if (!dependency) {
     reply.code(404);
     return { error: 'Dependency todo not found' };
@@ -337,7 +329,7 @@ async function addDependency(request, reply) {
     .where(
       and(
         eq(todoItemDependencies.todoItemId, todoId),
-        eq(todoItemDependencies.dependencyId, todoItemId)
+        eq(todoItemDependencies.dependencyId, dependencyId)
       )
     );
   if (existingLink) {
@@ -347,7 +339,7 @@ async function addDependency(request, reply) {
 
   await db.insert(todoItemDependencies).values({
     todoItemId: todoId,
-    dependencyId: todoItemId,
+    dependencyId: dependencyId,
   });
 
   return reply.status(204).send();
@@ -404,7 +396,7 @@ async function todoRoutes(fastify, options) {
   fastify.patch('/:id', updateTodo);
   fastify.delete('/:id', deleteTodo);
   fastify.post('/:id/complete', postCompleteTodo);
-  fastify.post('/:id/dependencies', addDependency);
+  fastify.post('/:id/dependencies/:dependencyId', addDependency);
   fastify.delete('/:id/dependencies/:dependencyId', removeDependency);
 }
 
