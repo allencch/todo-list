@@ -55,6 +55,8 @@ export const listTodosQuerySchema = z.object({
   sortOrder: z.enum(['asc', 'desc']).optional(),
   limit: z.coerce.number().int().positive().max(50).optional(),
   excludeId: z.coerce.number().int().positive().optional(),
+  pageSize: z.coerce.number().int().positive().max(100).optional(),
+  cursor: z.string().optional(),
 });
 
 export const addDependencySchema = z.object({

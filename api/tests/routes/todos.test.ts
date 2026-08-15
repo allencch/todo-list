@@ -158,6 +158,116 @@ describe('GET /api/todos', () => {
     await db.delete(todoItems).where(eq(todoItems.id, high.id));
     await db.delete(todoItems).where(eq(todoItems.id, low.id));
   });
+
+  it('limits the number of results', async () => {
+    const seeded = await db
+      .insert(todoItems)
+      .values([
+        { name: 'Limit cap test 1' },
+        { name: 'Limit cap test 2' },
+        { name: 'Limit cap test 3' },
+      ])
+      .returning();
+
+    const response = await fastify.inject({
+      method: 'GET',
+      url: '/api/todos',
+      query: { content: 'Limit cap test', limit: '2' },
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toHaveLength(2);
+
+    await db.delete(todoItems).where(eq(todoItems.id, seeded[0].id));
+    await db.delete(todoItems).where(eq(todoItems.id, seeded[1].id));
+    await db.delete(todoItems).where(eq(todoItems.id, seeded[2].id));
+  });
+
+  it('excludes the given todo and its existing dependencies', async () => {
+    const [dependent] = await db
+      .insert(todoItems)
+      .values({ name: 'Exclude scope test dependent' })
+      .returning();
+    const [dependency] = await db
+      .insert(todoItems)
+      .values({ name: 'Exclude scope test dependency' })
+      .returning();
+    const [unrelated] = await db
+      .insert(todoItems)
+      .values({ name: 'Exclude scope test unrelated' })
+      .returning();
+    await db
+      .insert(todoItemDependencies)
+      .values({ todoItemId: dependent.id, dependencyId: dependency.id });
+
+    const response = await fastify.inject({
+      method: 'GET',
+      url: '/api/todos',
+      query: { content: 'Exclude scope test', excludeId: String(dependent.id) },
+    });
+
+    expect(response.statusCode).toBe(200);
+    const ids = response.json().map((todo) => todo.id);
+    expect(ids).toContain(unrelated.id);
+    expect(ids).not.toContain(dependent.id);
+    expect(ids).not.toContain(dependency.id);
+
+    await db.delete(todoItemDependencies).where(eq(todoItemDependencies.todoItemId, dependent.id));
+    await db.delete(todoItems).where(eq(todoItems.id, dependent.id));
+    await db.delete(todoItems).where(eq(todoItems.id, dependency.id));
+    await db.delete(todoItems).where(eq(todoItems.id, unrelated.id));
+  });
+
+  it('paginates through results with a cursor', async () => {
+    const seeded = await db
+      .insert(todoItems)
+      .values([
+        { name: 'Cursor page test Alpha' },
+        { name: 'Cursor page test Bravo' },
+        { name: 'Cursor page test Charlie' },
+      ])
+      .returning();
+
+    const firstPage = await fastify.inject({
+      method: 'GET',
+      url: '/api/todos',
+      query: {
+        content: 'Cursor page test',
+        sortBy: 'name',
+        sortOrder: 'asc',
+        pageSize: '2',
+      },
+    });
+
+    expect(firstPage.statusCode).toBe(200);
+    const firstBody = firstPage.json();
+    expect(firstBody.data.map((todo) => todo.name)).toEqual([
+      'Cursor page test Alpha',
+      'Cursor page test Bravo',
+    ]);
+    expect(firstBody.nextCursor).toBeTruthy();
+
+    const secondPage = await fastify.inject({
+      method: 'GET',
+      url: '/api/todos',
+      query: {
+        content: 'Cursor page test',
+        sortBy: 'name',
+        sortOrder: 'asc',
+        pageSize: '2',
+        cursor: firstBody.nextCursor,
+      },
+    });
+
+    expect(secondPage.statusCode).toBe(200);
+    const secondBody = secondPage.json();
+    expect(secondBody.data.map((todo) => todo.name)).toEqual(['Cursor page test Charlie']);
+    expect(secondBody.nextCursor).toBeFalsy();
+
+    await db.delete(todoItems).where(eq(todoItems.id, seeded[0].id));
+    await db.delete(todoItems).where(eq(todoItems.id, seeded[1].id));
+    await db.delete(todoItems).where(eq(todoItems.id, seeded[2].id));
+  });
 });
 
 describe('GET /api/todos/:id', () => {

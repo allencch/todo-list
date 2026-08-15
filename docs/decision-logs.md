@@ -2,6 +2,13 @@
 
 Decision logs and other general logs in reverse order.
 
+## 2026-08-15
+
+Pagination. Choosing cursor-based pagination, instead of offset-based.
+This is because, the "system should handle a TODO list with 10,000+ items".
+Cursor-based pagination is best for this time of rendering.
+
+
 ## 2026-08-14
 
 ### About status

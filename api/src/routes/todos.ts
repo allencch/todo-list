@@ -1,4 +1,19 @@
-import { eq, asc, desc, inArray, notInArray, and, or, ilike, gte, lte, sql } from 'drizzle-orm';
+import {
+  eq,
+  asc,
+  desc,
+  gt,
+  lt,
+  isNull,
+  inArray,
+  notInArray,
+  and,
+  or,
+  ilike,
+  gte,
+  lte,
+  sql,
+} from 'drizzle-orm';
 import { todoItems, todoItemDependencies } from '@/db/schema';
 import { db } from '@/db/client';
 import { completeTodo } from '@/services/todo.service';
@@ -47,6 +62,50 @@ const sortColumns = {
   createdAt: todoItems.createdAt,
 };
 
+const dateSortColumns = new Set(['dueDate', 'createdAt']);
+
+function encodeCursor(value, id) {
+  return Buffer.from(JSON.stringify({ value, id })).toString('base64url');
+}
+
+function decodeCursor(cursor, sortBy) {
+  try {
+    const decoded = JSON.parse(Buffer.from(cursor, 'base64url').toString('utf-8'));
+    const value = sortBy && dateSortColumns.has(sortBy) && decoded.value !== null
+      ? new Date(decoded.value)
+      : decoded.value;
+    return { value, id: decoded.id };
+  } catch {
+    return null;
+  }
+}
+
+function cursorValueFromTodo(todo, sortBy) {
+  return sortBy ? (todo[sortBy] ?? null) : todo.id;
+}
+
+// Builds the "keyset" WHERE clause for the row after `cursor`, given the same
+// sortBy/sortOrder used to build the ORDER BY. Requires an `id` tiebreak on ties
+// (and, for the nullable `priority` column, a NULLS LAST-aware null branch).
+function buildCursorCondition(sortBy, sortOrder, cursor) {
+  const cmp = sortOrder === 'asc' ? gt : lt;
+
+  if (!sortBy) {
+    return lt(todoItems.id, cursor.id);
+  }
+
+  const column = sortColumns[sortBy];
+
+  if (sortBy === 'priority') {
+    if (cursor.value === null) {
+      return and(isNull(column), cmp(todoItems.id, cursor.id));
+    }
+    return or(isNull(column), cmp(column, cursor.value), and(eq(column, cursor.value), cmp(todoItems.id, cursor.id)));
+  }
+
+  return or(cmp(column, cursor.value), and(eq(column, cursor.value), cmp(todoItems.id, cursor.id)));
+}
+
 // TODO: Add pagination
 async function listTodos(request, reply) {
   const parsed = listTodosQuerySchema.safeParse(request.query);
@@ -55,8 +114,19 @@ async function listTodos(request, reply) {
     return { error: parsed.error.flatten() };
   }
 
-  const { status, priority, content, dueDateMin, dueDateMax, sortBy, sortOrder, limit, excludeId } =
-    parsed.data;
+  const {
+    status,
+    priority,
+    content,
+    dueDateMin,
+    dueDateMax,
+    sortBy,
+    sortOrder,
+    limit,
+    excludeId,
+    pageSize,
+    cursor,
+  } = parsed.data;
 
   const conditions = [];
   if (status) conditions.push(eq(todoItems.status, status));
@@ -82,32 +152,57 @@ async function listTodos(request, reply) {
     conditions.push(notInArray(todoItems.id, excludedIds));
   }
 
+  let decodedCursor;
+  if (cursor) {
+    decodedCursor = decodeCursor(cursor, sortBy);
+    if (!decodedCursor) {
+      reply.code(400);
+      return { error: 'Invalid cursor' };
+    }
+    conditions.push(buildCursorCondition(sortBy, sortOrder, decodedCursor));
+  }
+
   const orderFn = sortOrder === 'asc' ? asc : desc;
   let orderBy;
   if (sortBy === 'priority') {
     orderBy =
       sortOrder === 'asc'
-        ? sql`${todoItems.priority} ASC NULLS LAST`
-        : sql`${todoItems.priority} DESC NULLS LAST`;
+        ? [sql`${todoItems.priority} ASC NULLS LAST`, asc(todoItems.id)]
+        : [sql`${todoItems.priority} DESC NULLS LAST`, desc(todoItems.id)];
   } else if (sortBy) {
-    orderBy = orderFn(sortColumns[sortBy]);
+    orderBy = [orderFn(sortColumns[sortBy]), orderFn(todoItems.id)];
   } else {
-    orderBy = desc(todoItems.id);
+    orderBy = [desc(todoItems.id)];
   }
 
   let query = db
     .select()
     .from(todoItems)
     .where(conditions.length > 0 ? and(...conditions) : undefined)
-    .orderBy(orderBy)
+    .orderBy(...orderBy)
     .$dynamic();
 
-  if (limit) query = query.limit(limit);
+  if (pageSize) {
+    query = query.limit(pageSize + 1);
+  } else if (limit) {
+    query = query.limit(limit);
+  }
 
-  const todos = await query;
+  const rows = await query;
 
   reply.code(200);
-  return attachNextDueDates(todos);
+
+  if (pageSize) {
+    const hasMore = rows.length > pageSize;
+    const page = hasMore ? rows.slice(0, pageSize) : rows;
+    const data = await attachNextDueDates(page);
+    const last = page[page.length - 1];
+    const nextCursor =
+      hasMore && last ? encodeCursor(cursorValueFromTodo(last, sortBy), last.id) : null;
+    return { data, nextCursor };
+  }
+
+  return attachNextDueDates(rows);
 }
 
 async function getTodo(request, reply) {
