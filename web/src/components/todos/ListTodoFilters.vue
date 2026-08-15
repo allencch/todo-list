@@ -29,7 +29,7 @@ function setStatus(value: string) {
 }
 
 function setPriority(value: string) {
-  priority.value = value;
+  priority.value = priority.value === value ? '' : value;
   emitChange();
 }
 
@@ -120,17 +120,6 @@ function setDueDateMax(value: string) {
   </div>
 
   <div v-if="showPriorityFilter" class="flex items-center gap-2 px-4">
-    <button
-      class="rounded-full border px-3 py-1.5 text-sm whitespace-nowrap"
-      :class="
-        priority === ''
-          ? 'border-gray-900 bg-gray-900 text-white'
-          : 'border-gray-300 text-gray-600 hover:bg-gray-100'
-      "
-      @click="setPriority('')"
-    >
-      No priority
-    </button>
     <button
       class="rounded-full border px-3 py-1.5 text-sm whitespace-nowrap"
       :class="
