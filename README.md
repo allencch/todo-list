@@ -89,6 +89,11 @@ ENABLE_CORS=1 pnpm dev:api
 Then, we can view the document use this `http://localhost:3000/api/openapi.yaml` on the Swagger UI Explore.
 
 
+## Decision logs
+
+Refer [Decision Logs here](docs/decision-logs.md).
+
+
 ## Commands cheatsheet
 
 Run test environment migration
