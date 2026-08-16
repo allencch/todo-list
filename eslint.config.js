@@ -2,6 +2,7 @@ import js from '@eslint/js';
 import tseslint from 'typescript-eslint';
 import pluginVue from 'eslint-plugin-vue';
 import configPrettier from 'eslint-config-prettier';
+import globals from 'globals';
 
 export default tseslint.config(
   {
@@ -23,7 +24,7 @@ export default tseslint.config(
     files: ['web/**/*.{ts,vue}'],
     languageOptions: {
       globals: {
-        fetch: 'readonly',
+        ...globals.browser,
       },
     },
   },
