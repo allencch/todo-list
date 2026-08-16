@@ -44,7 +44,8 @@ async function changeStatus(status: string) {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      status
+      status,
+      version: props.todo.version,
     }),
   });
 
@@ -70,7 +71,10 @@ async function changePriority(priority: string | null) {
   const response = await fetch(`/api/todos/${props.todo.id}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ priority }),
+    body: JSON.stringify({
+      priority,
+      version: props.todo.version,
+    }),
   });
 
   if (!response.ok) {

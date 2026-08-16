@@ -37,6 +37,8 @@ const status = ref<'not_started' | 'in_progress' | 'completed' | 'archived'>(
     'not_started',
 );
 
+const version = ref(props.todo?.version ?? null);
+
 const weekdayLabels = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 const weekdayValues = [0, 1, 2, 3, 4, 5, 6];
 const monthDayValues = Array.from({ length: 31 }, (_, i) => i + 1);
@@ -96,7 +98,7 @@ async function changeStatus(newStatus: 'not_started' | 'in_progress' | 'complete
   const response = await fetch(`/api/todos/${todoId.value}/status`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ status: newStatus }),
+    body: JSON.stringify({ status: newStatus, version: version.value }),
   });
 
   if (!response.ok) {
@@ -108,6 +110,7 @@ async function changeStatus(newStatus: 'not_started' | 'in_progress' | 'complete
 
   const updated = await response.json();
   status.value = updated.status;
+  version.value = updated.version;
 
   if (newStatus === 'completed') {
     emit('complete');
@@ -154,6 +157,7 @@ function patchTodo() {
       description: description.value || undefined,
       dueDate: dueDate.value || undefined,
       priority: priority.value || undefined,
+      version: version.value,
       ...buildRecurFields(),
     }),
   });
@@ -170,6 +174,7 @@ async function handleSubmit() {
   }
 
   const todo = await response.json();
+  version.value = todo.version;
   emit('submit', todo);
 }
 </script>
