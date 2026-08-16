@@ -27,6 +27,7 @@ const nextCursor = ref<string | null>(null);
 const isLoadingMore = ref(false);
 
 const editingTodo = ref<TodoItem | null>(null);
+const formPanelKey = ref(0);
 const isCreating = computed(() => route.query.new === '1');
 
 const mainRef = ref<HTMLElement | null>(null);
@@ -169,7 +170,8 @@ async function handleTodoChanged(id: number) {
       todos.value.splice(index, 1);
     }
     if (isEditingThisTodo) {
-      toastMessage.value = 'The todo you are editing was deleted elsewhere.';
+      toastMessage.value = 'The todo you were editing was deleted elsewhere.';
+      closePanel();
     }
     return;
   }
@@ -183,7 +185,11 @@ async function handleTodoChanged(id: number) {
   }
 
   if (isEditingThisTodo) {
-    toastMessage.value = `"${updated.name}" was changed elsewhere while you're editing it. Reload to see the latest.`;
+    // Bumping the key forces FormPanel to remount, so its fields (initialized
+    // once from the `todo` prop at setup) re-sync from the fresh data.
+    editingTodo.value = updated;
+    formPanelKey.value++;
+    toastMessage.value = `"${updated.name}" was updated elsewhere and refreshed.`;
   }
 }
 
@@ -276,7 +282,7 @@ function handlePanelSubmit() {
     >
       <FormPanel
         v-if="editingTodo || isCreating"
-        :key="editingTodo?.id ?? 'new'"
+        :key="`${editingTodo?.id ?? 'new'}-${formPanelKey}`"
         :todo="editingTodo ?? undefined"
         @close="closePanel"
         @submit="handlePanelSubmit"
