@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
+import { ChevronLeft } from '@lucide/vue';
 import type { TodoItem } from '@/types/todo';
 import ErrorModal from '@/components/shared/ErrorModal.vue';
 import DaySelection from './DaySelection.vue';
@@ -181,6 +182,15 @@ async function handleSubmit() {
 
 <template>
   <div class="h-full overflow-y-auto p-4">
+    <button
+      type="button"
+      class="mb-2 flex items-center gap-1 text-sm text-gray-500 hover:text-gray-900 md:hidden"
+      @click="emit('close')"
+    >
+      <ChevronLeft class="h-4 w-4" />
+      Back
+    </button>
+
     <h2 class="mb-3 text-lg font-semibold">{{ todo ? `Edit todo: ${name}` : 'New todo' }}</h2>
 
     <form class="flex flex-col gap-3" @submit.prevent="handleSubmit">

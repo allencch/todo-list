@@ -92,7 +92,7 @@ async function changePriority(priority: string | null) {
 
 <template>
   <li class="px-3 py-2">
-    <div class="flex items-center gap-2">
+    <div class="flex flex-col gap-2 md:flex-row md:items-center">
       <button
         type="button"
         class="flex flex-1 cursor-pointer items-center gap-2 text-left"
@@ -109,25 +109,27 @@ async function changePriority(priority: string | null) {
         <Flag v-if="todo.priority" class="h-4 w-4" :class="priorityColors[todo.priority]" />
         {{ todo.name }}
       </button>
-      <div
-        v-if="todo.recurType || todo.dueDate"
-        class="flex shrink-0 items-center gap-1 text-sm text-gray-500"
-      >
-        <Repeat v-if="todo.recurType" class="h-4 w-4 shrink-0 text-gray-400" />
-        <span v-if="todo.dueDate">{{ new Date(todo.dueDate).toLocaleDateString() }}</span>
-      </div>
-      <div class="flex items-center gap-2">
-        <button
-          type="button"
-          aria-label="Edit"
-          class="cursor-pointer text-gray-500"
-          @click="openEdit"
+      <div class="flex items-center justify-between gap-2 md:contents">
+        <div
+          v-if="todo.recurType || todo.dueDate"
+          class="flex shrink-0 items-center gap-1 text-sm text-gray-500"
         >
-          <Pencil class="h-4 w-4" />
-        </button>
-        <button type="button" aria-label="Delete" class="cursor-pointer text-red-500">
-          <Trash2 class="h-4 w-4" @click="showDeleteModal = true" />
-        </button>
+          <Repeat v-if="todo.recurType" class="h-4 w-4 shrink-0 text-gray-400" />
+          <span v-if="todo.dueDate">{{ new Date(todo.dueDate).toLocaleDateString() }}</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <button
+            type="button"
+            aria-label="Edit"
+            class="cursor-pointer text-gray-500"
+            @click="openEdit"
+          >
+            <Pencil class="h-4 w-4" />
+          </button>
+          <button type="button" aria-label="Delete" class="cursor-pointer text-red-500">
+            <Trash2 class="h-4 w-4" @click="showDeleteModal = true" />
+          </button>
+        </div>
       </div>
     </div>
 

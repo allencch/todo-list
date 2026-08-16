@@ -11,7 +11,7 @@ function handleSearch() {
 </script>
 
 <template>
-  <div class="mx-32 flex h-screen flex-col">
+  <div class="flex h-screen flex-col md:mx-32">
     <header class="flex items-center gap-3 p-4">
       <input
         v-model="searchInput"

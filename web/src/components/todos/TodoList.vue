@@ -180,7 +180,10 @@ function handlePanelSubmit() {
 
 <template>
   <div class="flex flex-1 overflow-hidden">
-    <div class="flex w-3/5 flex-col overflow-hidden border-r border-gray-200">
+    <div
+      class="overflow-hidden border-gray-200 md:flex md:w-3/5 md:flex-col md:border-r"
+      :class="editingTodo || isCreating ? 'hidden' : 'flex w-full flex-col'"
+    >
       <ListTodoFilters @change="handleFilterChange">
         <AddItem />
       </ListTodoFilters>
@@ -202,7 +205,10 @@ function handlePanelSubmit() {
       </main>
     </div>
 
-    <div class="flex w-2/5 flex-col overflow-y-auto">
+    <div
+      class="overflow-y-auto md:flex md:w-2/5 md:flex-col"
+      :class="editingTodo || isCreating ? 'flex w-full flex-col' : 'hidden'"
+    >
       <FormPanel
         v-if="editingTodo || isCreating"
         :key="editingTodo?.id ?? 'new'"
