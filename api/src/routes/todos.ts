@@ -21,6 +21,7 @@ import { alias } from 'drizzle-orm/pg-core';
 import { todoItems, todoItemDependencies } from '@/db/schema';
 import { db } from '@/db/client';
 import { completeTodo } from '@/services/todo.service';
+import { broadcastTodoChanged } from '@/ws';
 import {
   createTodoSchema,
   updateTodoSchema,
@@ -31,6 +32,11 @@ import {
 } from '@/schemas/todos.schema.js';
 
 const dependencyTodoItems = alias(todoItems, 'dependency_todo_items');
+
+function getClientId(request) {
+  const header = request.headers['x-client-id'];
+  return Array.isArray(header) ? header[0] : header;
+}
 
 // Called when a version-guarded UPDATE affects zero rows. Distinguishes the
 // todo genuinely not existing (or being soft-deleted) from a real optimistic-lock
@@ -72,6 +78,7 @@ async function createTodo(request, reply) {
   }
 
   const [todo] = await db.insert(todoItems).values(parsed.data).returning();
+  broadcastTodoChanged(todo.id, getClientId(request));
   reply.code(201);
   return todo;
 }
@@ -340,6 +347,7 @@ async function updateTodo(request, reply) {
     return versionConflictReply(reply, todoId);
   }
 
+  broadcastTodoChanged(todoId, getClientId(request));
   reply.code(200);
   return todo;
 }
@@ -364,10 +372,11 @@ async function deleteTodo(request, reply) {
     deletedAt: sql`now()`,
     version: sql`${todoItems.version} + 1`, // update version as well, since this is soft delete
   }).where(eq(todoItems.id, todoId));
+  broadcastTodoChanged(todoId, getClientId(request));
   return reply.status(204).send();
 }
 
-async function handleCompleteStatus(todo, reply, version) {
+async function handleCompleteStatus(todo, reply, version, clientId) {
   if (todo.status === 'completed') {
     // Do nothing
     reply.code(200);
@@ -379,12 +388,13 @@ async function handleCompleteStatus(todo, reply, version) {
     return versionConflictReply(reply, todo.id);
   }
 
+  broadcastTodoChanged(todo.id, clientId);
   reply.code(200);
   const [withNextDueDate] = await attachNextDueDates([updated]);
   return withNextDueDate;
 }
 
-async function handleInProgressStatus(todo, reply, version) {
+async function handleInProgressStatus(todo, reply, version, clientId) {
   if (todo.status === 'in_progress') {
     reply.code(200);
     return todo;
@@ -423,6 +433,7 @@ async function handleInProgressStatus(todo, reply, version) {
     return versionConflictReply(reply, todo.id);
   }
 
+  broadcastTodoChanged(todo.id, clientId);
   reply.code(200);
   return updated;
 }
@@ -441,6 +452,7 @@ async function updateTodoStatus(request, reply) {
     return { error: parsed.error.flatten() };
   }
   const { status, version } = parsed.data;
+  const clientId = getClientId(request);
 
   const [todo] = await db
     .select()
@@ -452,11 +464,11 @@ async function updateTodoStatus(request, reply) {
   }
 
   if (status === 'completed') {
-    return handleCompleteStatus(todo, reply, version);
+    return handleCompleteStatus(todo, reply, version, clientId);
   }
 
   if (status === 'in_progress') {
-    return handleInProgressStatus(todo, reply, version);
+    return handleInProgressStatus(todo, reply, version, clientId);
   }
 
   const [updated] = await db
@@ -475,6 +487,7 @@ async function updateTodoStatus(request, reply) {
     return versionConflictReply(reply, todoId);
   }
 
+  broadcastTodoChanged(todoId, clientId);
   reply.code(200);
   return updated;
 }
@@ -530,6 +543,7 @@ async function addDependency(request, reply) {
     dependencyId: dependencyId,
   });
 
+  broadcastTodoChanged(todoId, getClientId(request));
   return reply.status(204).send();
 }
 
@@ -580,6 +594,7 @@ async function removeDependency(request, reply) {
     )
   );
 
+  broadcastTodoChanged(todoId, getClientId(request));
   return reply.code(204).send();
 }
 

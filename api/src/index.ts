@@ -3,8 +3,10 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
+import websocket from '@fastify/websocket';
 import 'dotenv/config';
 import apiRoutes from './routes';
+import { registerClient } from './ws';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const openapiPath = join(__dirname, '..', 'openapi.yaml');
@@ -21,6 +23,15 @@ fastify.get('/api/health', async () => {
 
 fastify.get('/api/openapi.yaml', async (request, reply) => {
   reply.type('text/yaml').send(readFileSync(openapiPath, 'utf-8'));
+});
+
+fastify.register(websocket);
+
+fastify.register(async (instance) => {
+  instance.get('/api/ws', { websocket: true }, (socket) => {
+    const clientId = registerClient(socket);
+    socket.send(JSON.stringify({ type: 'connected', clientId }));
+  });
 });
 
 fastify.register(apiRoutes, { prefix: '/api' });
