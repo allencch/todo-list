@@ -8,6 +8,7 @@ import {
   timestamp,
   pgEnum,
   uniqueIndex,
+  index,
   jsonb,
   AnyPgColumn,
   primaryKey,
@@ -54,6 +55,26 @@ export const todoItems = pgTable(
     // generating a new one for the same parent.
     parentIdIdx: uniqueIndex('todo_items_parent_id_idx')
       .on(table.parentId)
+      .where(isNull(table.deletedAt)),
+
+    // One composite (column, id) index per sortBy option exposed in listTodos.
+    // The trailing `id` matches the keyset-pagination tiebreak (buildCursorCondition),
+    // so each index serves both the equality/range filter and the cursor'd sort.
+    // Partial: excludes soft-deleted rows, since every listTodos query filters those out.
+    statusIdIdx: index('todo_items_status_id_idx')
+      .on(table.status, table.id)
+      .where(isNull(table.deletedAt)),
+    priorityIdIdx: index('todo_items_priority_id_idx')
+      .on(table.priority, table.id)
+      .where(isNull(table.deletedAt)),
+    dueDateIdIdx: index('todo_items_due_date_id_idx')
+      .on(table.dueDate, table.id)
+      .where(isNull(table.deletedAt)),
+    nameIdIdx: index('todo_items_name_id_idx')
+      .on(table.name, table.id)
+      .where(isNull(table.deletedAt)),
+    createdAtIdIdx: index('todo_items_created_at_id_idx')
+      .on(table.createdAt, table.id)
       .where(isNull(table.deletedAt)),
   }),
 );
