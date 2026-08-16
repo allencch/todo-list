@@ -180,9 +180,9 @@ function handlePanelSubmit() {
       <main ref="mainRef" class="flex-1 overflow-y-auto px-4 py-4" @scroll="handleListScroll">
         <ul ref="listRef" class="divide-y divide-gray-200 rounded-md border border-gray-300">
           <Item
-            :todo="todo"
             v-for="todo in todos"
             :key="todo.id"
+            :todo="todo"
             @submit="handleUpdate"
             @delete="handleDelete"
             @complete="fetchTodos"

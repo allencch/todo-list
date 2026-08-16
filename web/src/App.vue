@@ -14,10 +14,10 @@ function handleSearch() {
   <div class="mx-32 flex h-screen flex-col">
     <header class="flex items-center gap-3 p-4">
       <input
+        v-model="searchInput"
         type="text"
         placeholder="Search"
         class="flex-1 rounded-md border border-gray-300 px-3 py-2"
-        v-model="searchInput"
         @keyup.enter="handleSearch"
       />
       <button class="rounded-md border border-gray-300 px-3 py-2" @click="handleSearch">
