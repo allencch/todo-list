@@ -16,6 +16,7 @@
   "type": "module",
   "dependencies": {
     "@fastify/cors": "^11.3.0",
+    "@fastify/websocket": "^11.3.0",
     "dotenv": "^17.4.2",
     "drizzle-orm": "^0.45.2",
     "drizzle-zod": "^0.8.3",
