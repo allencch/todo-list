@@ -76,6 +76,16 @@ export const todoItems = pgTable(
     createdAtIdIdx: index('todo_items_created_at_id_idx')
       .on(table.createdAt, table.id)
       .where(isNull(table.deletedAt)),
+
+    // Trigram GIN indexes so the `content` filter's ILIKE '%...%' substring search
+    // (listTodos) can use an index instead of a sequential scan. Requires the
+    // pg_trgm extension -- see the migration.
+    nameTrgmIdx: index('todo_items_name_trgm_idx')
+      .using('gin', table.name.op('gin_trgm_ops'))
+      .where(isNull(table.deletedAt)),
+    descriptionTrgmIdx: index('todo_items_description_trgm_idx')
+      .using('gin', table.description.op('gin_trgm_ops'))
+      .where(isNull(table.deletedAt)),
   }),
 );
 

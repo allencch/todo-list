@@ -5,11 +5,18 @@ Decision logs and other general logs in reverse order.
 
 ## 2026-08-16
 
+### Lock
+
 > The API should support multiple users accessing the same TODO list concurrently.
 
 To prevent user to overwrite the others, and this is about race condition.
 For the current stage, optimistic lock is the best solution I think for the current stage.
 If allows sync and conflicting detection, this will be much more complex.
+
+### Large scale search
+
+For large scale search, choosing `pg_trgm` over FTS now. The `ilike` is slow, FTS on the other hand will need to match at word boundaries.
+
 
 
 ## 2026-08-15
