@@ -17,6 +17,8 @@ If allows sync and conflicting detection, this will be much more complex.
 
 For large scale search, choosing `pg_trgm` over FTS now. The `ilike` is slow, FTS on the other hand will need to match at word boundaries.
 
+For frontend wise, use `vue-virtual`, so that only visibile items are loaded in the DOM.
+
 
 
 ## 2026-08-15

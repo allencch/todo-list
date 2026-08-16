@@ -27,8 +27,8 @@ Web:
 - [x] Error handling
 - [x] Filtering
 - [x] Route
-- [ ] Responsive for mobile
-- [ ] Toast
+- [x] Responsive for mobile
+- [x] Toast
 - [ ] Item editing should have indicator
 
 
