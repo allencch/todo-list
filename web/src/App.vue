@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import TodoList from '@/components/todos/TodoList.vue';
+import SummarizeButton from '@/components/todos/SummarizeButton.vue';
 
 const searchInput = ref('');
 const search = ref('');
@@ -23,7 +24,7 @@ function handleSearch() {
       <button class="rounded-md border border-gray-300 px-3 py-2" @click="handleSearch">
         Search
       </button>
-      <button class="h-10 w-10 rounded-full border border-gray-300"></button>
+      <SummarizeButton />
     </header>
 
     <TodoList :search="search" />
