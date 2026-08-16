@@ -52,6 +52,15 @@ pnpm dev
 ```
 
 
+To test the large data, we can run
+
+```bash
+cd api && pnpm run db:seed:large
+```
+
+This will download text from Gutenberg and added to the database.
+This is to test the scalability of the application.
+
 
 ## Stack
 
@@ -67,6 +76,17 @@ Frontend
 - Vue
 - Tailwind
 - Vite
+
+
+## Swagger
+
+To allow `openapi.yaml` to be read from `swagger-ui` (Docker), run it with
+
+```bash
+ENABLE_CORS=1 pnpm dev:api
+```
+
+Then, we can view the document use this `http://localhost:3000/api/openapi.yaml` on the Swagger UI Explore.
 
 
 ## Commands cheatsheet
