@@ -30,8 +30,9 @@ Database: PostgreSQL, recommended version 16 and above. Create a database for th
 `pg_trgm` extension is enabled automatically by the migrations, so no manual setup is needed there
 (the database user does need privileges to create extensions).
 
-Set up the environment variables in `api/.env.local` (not the repo root, and not a plain `.env` --
-only `.env.local` is loaded):
+Set up the environment variables in `api/.env` or `api/.env.local` (not the repo root). Both are
+loaded; `.env.local` takes priority if a variable is set in both, so it's the place for
+machine-specific values or secrets, while `.env` can hold shared defaults:
 
 ```
 DATABASE_URL=<postgresql database url>
