@@ -19,6 +19,7 @@ API:
   + [x] delete
   + [x] error handling
 - [x] Filtering
+- [ ] Rate limit
 
 Web:
 - [x] Initial page
