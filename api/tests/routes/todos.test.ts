@@ -476,12 +476,13 @@ describe('PATCH /api/todos/:id', () => {
     const response = await fastify.inject({
       method: 'PATCH',
       url: `/api/todos/${seeded.id}`,
-      payload: { name: 'Updated todo' },
+      payload: { name: 'Updated todo', version: seeded.version },
     });
 
     expect(response.statusCode).toBe(200);
     const body = response.json();
     expect(body).toEqual(expect.objectContaining({ id: seeded.id, name: 'Updated todo' }));
+    expect(body.version).toBe(seeded.version + 1);
 
     await db.delete(todoItems).where(eq(todoItems.id, seeded.id));
   });
@@ -499,12 +500,50 @@ describe('PATCH /api/todos/:id', () => {
     const response = await fastify.inject({
       method: 'PATCH',
       url: `/api/todos/${seeded.id}`,
-      payload: { recurCustom: { type: 'monthly', monthDays: [1, 15] } },
+      payload: { recurCustom: { type: 'monthly', monthDays: [1, 15] }, version: seeded.version },
     });
 
     expect(response.statusCode).toBe(200);
     const body = response.json();
     expect(body.recurCustom).toEqual({ type: 'monthly', monthDays: [1, 15] });
+
+    await db.delete(todoItems).where(eq(todoItems.id, seeded.id));
+  });
+
+  it('rejects an update with a stale version', async () => {
+    const [seeded] = await db
+      .insert(todoItems)
+      .values({ name: 'Stale version test' })
+      .returning();
+
+    const response = await fastify.inject({
+      method: 'PATCH',
+      url: `/api/todos/${seeded.id}`,
+      payload: { name: 'Should not apply', version: seeded.version + 1 },
+    });
+
+    expect(response.statusCode).toBe(409);
+
+    const [unchanged] = await db.select().from(todoItems).where(eq(todoItems.id, seeded.id));
+    expect(unchanged.name).toBe('Stale version test');
+
+    await db.delete(todoItems).where(eq(todoItems.id, seeded.id));
+  });
+
+  it('returns 404 when updating a deleted todo', async () => {
+    const [seeded] = await db
+      .insert(todoItems)
+      .values({ name: 'Deleted update test' })
+      .returning();
+    await fastify.inject({ method: 'DELETE', url: `/api/todos/${seeded.id}` });
+
+    const response = await fastify.inject({
+      method: 'PATCH',
+      url: `/api/todos/${seeded.id}`,
+      payload: { name: 'Should not apply', version: seeded.version },
+    });
+
+    expect(response.statusCode).toBe(404);
 
     await db.delete(todoItems).where(eq(todoItems.id, seeded.id));
   });
@@ -583,7 +622,7 @@ describe('POST /api/todos/:id/status', () => {
     const response = await fastify.inject({
       method: 'POST',
       url: `/api/todos/${seeded.id}/status`,
-      payload: { status: 'completed' },
+      payload: { status: 'completed', version: seeded.version },
     });
 
     expect(response.statusCode).toBe(200);
@@ -598,13 +637,33 @@ describe('POST /api/todos/:id/status', () => {
     await db.delete(todoItems).where(eq(todoItems.id, seeded.id));
   });
 
+  it('rejects completing with a stale version', async () => {
+    const [seeded] = await db
+      .insert(todoItems)
+      .values({ name: 'Stale complete version test' })
+      .returning();
+
+    const response = await fastify.inject({
+      method: 'POST',
+      url: `/api/todos/${seeded.id}/status`,
+      payload: { status: 'completed', version: seeded.version + 1 },
+    });
+
+    expect(response.statusCode).toBe(409);
+
+    const [unchanged] = await db.select().from(todoItems).where(eq(todoItems.id, seeded.id));
+    expect(unchanged.status).toBe('not_started');
+
+    await db.delete(todoItems).where(eq(todoItems.id, seeded.id));
+  });
+
   it('changes status to in_progress when there are no dependencies', async () => {
     const [todo] = await db.insert(todoItems).values({ name: 'Ready to start' }).returning();
 
     const response = await fastify.inject({
       method: 'POST',
       url: `/api/todos/${todo.id}/status`,
-      payload: { status: 'in_progress' },
+      payload: { status: 'in_progress', version: todo.version },
     });
 
     expect(response.statusCode).toBe(200);
@@ -626,7 +685,7 @@ describe('POST /api/todos/:id/status', () => {
     const response = await fastify.inject({
       method: 'POST',
       url: `/api/todos/${todo.id}/status`,
-      payload: { status: 'in_progress' },
+      payload: { status: 'in_progress', version: todo.version },
     });
 
     expect(response.statusCode).toBe(400);
@@ -652,7 +711,7 @@ describe('POST /api/todos/:id/status', () => {
     const response = await fastify.inject({
       method: 'POST',
       url: `/api/todos/${todo.id}/status`,
-      payload: { status: 'in_progress' },
+      payload: { status: 'in_progress', version: todo.version },
     });
 
     expect(response.statusCode).toBe(200);
@@ -661,6 +720,43 @@ describe('POST /api/todos/:id/status', () => {
     await db.delete(todoItemDependencies).where(eq(todoItemDependencies.todoItemId, todo.id));
     await db.delete(todoItems).where(eq(todoItems.id, todo.id));
     await db.delete(todoItems).where(eq(todoItems.id, dependency.id));
+  });
+
+  it('rejects changing to in_progress with a stale version', async () => {
+    const [todo] = await db
+      .insert(todoItems)
+      .values({ name: 'Stale in_progress version test' })
+      .returning();
+
+    const response = await fastify.inject({
+      method: 'POST',
+      url: `/api/todos/${todo.id}/status`,
+      payload: { status: 'in_progress', version: todo.version + 1 },
+    });
+
+    expect(response.statusCode).toBe(409);
+
+    await db.delete(todoItems).where(eq(todoItems.id, todo.id));
+  });
+
+  it('rejects a plain status change with a stale version', async () => {
+    const [todo] = await db
+      .insert(todoItems)
+      .values({ name: 'Stale archive version test' })
+      .returning();
+
+    const response = await fastify.inject({
+      method: 'POST',
+      url: `/api/todos/${todo.id}/status`,
+      payload: { status: 'archived', version: todo.version + 1 },
+    });
+
+    expect(response.statusCode).toBe(409);
+
+    const [unchanged] = await db.select().from(todoItems).where(eq(todoItems.id, todo.id));
+    expect(unchanged.status).toBe('not_started');
+
+    await db.delete(todoItems).where(eq(todoItems.id, todo.id));
   });
 });
 

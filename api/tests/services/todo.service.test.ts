@@ -80,4 +80,29 @@ describe('completeTodo', () => {
     await db.delete(todoItems).where(eq(todoItems.id, child.id));
     await db.delete(todoItems).where(eq(todoItems.id, seeded.id));
   });
+
+  it('completes when the given version matches', async () => {
+    const [seeded] = await db.insert(todoItems).values({ name: 'Versioned todo' }).returning();
+
+    const result = await completeTodo(seeded, seeded.version);
+
+    expect(result).toBeDefined();
+    expect(result.status).toBe('completed');
+    expect(result.version).toBe(seeded.version + 1);
+
+    await db.delete(todoItems).where(eq(todoItems.id, seeded.id));
+  });
+
+  it('returns undefined when the given version is stale', async () => {
+    const [seeded] = await db.insert(todoItems).values({ name: 'Stale versioned todo' }).returning();
+
+    const result = await completeTodo(seeded, seeded.version + 1);
+
+    expect(result).toBeUndefined();
+
+    const [unchanged] = await db.select().from(todoItems).where(eq(todoItems.id, seeded.id));
+    expect(unchanged.status).toBe('not_started');
+
+    await db.delete(todoItems).where(eq(todoItems.id, seeded.id));
+  });
 });
