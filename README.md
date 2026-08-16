@@ -61,6 +61,20 @@ cd api && pnpm run db:seed:large
 This will download text from Gutenberg and added to the database.
 This is to test the scalability of the application.
 
+## Docker
+
+To use docker, run
+
+```bash
+docker compose up
+```
+
+Then run the migration with,
+
+```bash
+docker exec todo-list-api-1 node_modules/.bin/drizzle-kit migrate
+```
+
 
 ## Stack
 

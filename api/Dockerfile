@@ -24,4 +24,4 @@ COPY api ./api
 
 WORKDIR /app/api
 EXPOSE 3000
-CMD ["pnpm", "exec", "tsx", "src/index.ts"]
+CMD ["node_modules/.bin/tsx", "src/index.ts"]
