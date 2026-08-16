@@ -7,7 +7,8 @@
     "test": "vitest run",
     "dev": "nodemon --watch src --ext ts --exec tsx src/index.ts",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate"
+    "db:migrate": "drizzle-kit migrate",
+    "db:seed:large": "NODE_OPTIONS=--no-network-family-autoselection tsx scripts/seed-large.ts"
   },
   "keywords": [],
   "author": "",
