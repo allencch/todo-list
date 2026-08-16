@@ -32,6 +32,20 @@ import {
 
 const dependencyTodoItems = alias(todoItems, 'dependency_todo_items');
 
+// Called when a version-guarded UPDATE affects zero rows. Distinguishes the
+// todo genuinely not existing (or being soft-deleted) from a real optimistic-lock
+// conflict, so the client can tell "reload, it's gone" apart from "reload, it changed".
+async function versionConflictReply(reply, todoId) {
+  const [current] = await db.select().from(todoItems).where(eq(todoItems.id, todoId));
+  if (!current || current.deletedAt) {
+    reply.code(404);
+    return { error: 'Todo not found' };
+  }
+
+  reply.code(409);
+  return { error: 'This todo was modified by someone else. Please reload and try again.' };
+}
+
 async function attachNextDueDates(todos) {
   const completedIds = todos.filter((todo) => todo.status === 'completed').map((todo) => todo.id);
   if (completedIds.length === 0) {
@@ -307,6 +321,7 @@ async function updateTodo(request, reply) {
     reply.code(400);
     return { error: parsed.error.flatten() };
   }
+  const { version } = parsed.data;
 
   const parsedParams = idParamSchema.safeParse(request.params);
   if (!parsedParams.success) {
@@ -317,13 +332,12 @@ async function updateTodo(request, reply) {
 
   const [todo] = await db
     .update(todoItems)
-    .set(parsed.data)
-    .where(and(eq(todoItems.id, todoId), isNull(todoItems.deletedAt)))
+    .set({ ...parsed.data, version: sql`${todoItems.version} + 1` })
+    .where(and(eq(todoItems.id, todoId), isNull(todoItems.deletedAt), eq(todoItems.version, version)))
     .returning();
 
   if (!todo) {
-    reply.code(404);
-    return { error: 'Todo not found' };
+    return versionConflictReply(reply, todoId);
   }
 
   reply.code(200);
@@ -346,24 +360,31 @@ async function deleteTodo(request, reply) {
     reply.code(404);
     return { error: 'Todo not found' };
   }
-  await db.update(todoItems).set({ deletedAt: sql`now()` }).where(eq(todoItems.id, todoId));
+  await db.update(todoItems).set({
+    deletedAt: sql`now()`,
+    version: sql`${todoItems.version} + 1`, // update version as well, since this is soft delete
+  }).where(eq(todoItems.id, todoId));
   return reply.status(204).send();
 }
 
-async function handleCompleteStatus(todo, reply) {
+async function handleCompleteStatus(todo, reply, version) {
   if (todo.status === 'completed') {
     // Do nothing
     reply.code(200);
     return todo;
   }
 
-  const updated = await completeTodo(todo);
+  const updated = await completeTodo(todo, version);
+  if (!updated) {
+    return versionConflictReply(reply, todo.id);
+  }
+
   reply.code(200);
   const [withNextDueDate] = await attachNextDueDates([updated]);
   return withNextDueDate;
 }
 
-async function handleInProgressStatus(todo, reply) {
+async function handleInProgressStatus(todo, reply, version) {
   if (todo.status === 'in_progress') {
     reply.code(200);
     return todo;
@@ -388,9 +409,19 @@ async function handleInProgressStatus(todo, reply) {
 
   const [updated] = await db
     .update(todoItems)
-    .set({ status: 'in_progress' })
-    .where(eq(todoItems.id, todo.id))
+    .set({
+      status: 'in_progress',
+      version: sql`${todoItems.version} + 1`,
+     })
+    .where(and(
+      eq(todoItems.id, todo.id),
+      eq(todoItems.version, version)
+    ))
     .returning();
+
+  if (!updated) {
+    return versionConflictReply(reply, todo.id);
+  }
 
   reply.code(200);
   return updated;
@@ -409,7 +440,7 @@ async function updateTodoStatus(request, reply) {
     reply.code(400);
     return { error: parsed.error.flatten() };
   }
-  const { status } = parsed.data;
+  const { status, version } = parsed.data;
 
   const [todo] = await db
     .select()
@@ -421,18 +452,28 @@ async function updateTodoStatus(request, reply) {
   }
 
   if (status === 'completed') {
-    return handleCompleteStatus(todo, reply);
+    return handleCompleteStatus(todo, reply, version);
   }
 
   if (status === 'in_progress') {
-    return handleInProgressStatus(todo, reply);
+    return handleInProgressStatus(todo, reply, version);
   }
 
   const [updated] = await db
     .update(todoItems)
-    .set({ status })
-    .where(eq(todoItems.id, todoId))
+    .set({
+      status,
+      version: sql`${todoItems.version} + 1`,
+    })
+    .where(and(
+      eq(todoItems.id, todoId),
+      eq(todoItems.version, version)
+    ))
     .returning();
+
+  if (!updated) {
+    return versionConflictReply(reply, todoId);
+  }
 
   reply.code(200);
   return updated;

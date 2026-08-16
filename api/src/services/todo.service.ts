@@ -1,4 +1,4 @@
-import { eq, isNull } from 'drizzle-orm';
+import { eq, isNull, and, sql } from 'drizzle-orm';
 import { db } from '@/db/client';
 import { todoItems, TodoItem } from '@/db/schema';
 import type { CustomRecurrence } from '@/modules/todo.types';
@@ -50,11 +50,21 @@ function getNextCustomDueDate(
   return null;
 }
 
-export async function completeTodo(todo: TodoItem) {
+export async function completeTodo(todo: TodoItem, version: number | null = null) {
+  const conditions = [eq(todoItems.id, todo.id)];
+  if (version !== null) {
+    conditions.push(eq(todoItems.version, version));
+  }
+
   const [updated] = await db
     .update(todoItems)
-    .set({ status: 'completed' })
-    .where(eq(todoItems.id, todo.id))
+    .set({
+      status: 'completed',
+      version: sql`${todoItems.version} + 1`,
+     })
+    .where(
+      and(...conditions)
+    )
     .returning();
 
   if (RECURRING_TYPES.includes(todo.recurType)) {

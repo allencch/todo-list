@@ -38,6 +38,7 @@ export const updateTodoSchema = baseTodoSchema
   .partial()
   .extend({
     priority: z.enum(['low', 'medium', 'high']).nullable().optional(),
+    version: z.coerce.number().int().positive(),
   })
   .refine(requiresRecurCustomWhenCustom, {
     message: 'recurCustom is required when recurType is custom',
@@ -70,4 +71,5 @@ export const dependencyParamSchema = z.object({
 
 export const updateStatusSchema = z.object({
   status: z.enum(['not_started', 'in_progress', 'completed', 'archived']),
+  version: z.coerce.number().int().positive(),
 });
