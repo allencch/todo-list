@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { priorityColors, humanize } from '@/utils/todo.util.ts';
+import { priorityColors, humanize } from '@/utils/todo.util';
 
 type Priority = 'low' | 'medium' | 'high';
 

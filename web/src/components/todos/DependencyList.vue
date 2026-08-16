@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useRoute, useRouter } from 'vue-router';
-import { statusIcons, statusColors } from '@/utils/todo.util.ts';
+import { statusIcons, statusColors } from '@/utils/todo.util';
 
 type DependencyOption = { id: number; name: string; status: string };
 

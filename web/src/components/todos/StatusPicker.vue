@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { humanize } from '@/utils/todo.util.ts';
+import { humanize } from '@/utils/todo.util';
 
 type Status = 'not_started' | 'in_progress' | 'completed' | 'archived';
 

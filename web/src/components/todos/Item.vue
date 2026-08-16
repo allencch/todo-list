@@ -9,7 +9,7 @@ import PriorityPicker from './PriorityPicker.vue';
 import StatusPicker from './StatusPicker.vue';
 import ErrorModal from '@/components/shared/ErrorModal.vue';
 import { apiFetch, safeParseJson, buildErrorMessage } from '@/utils/http';
-import { recurLabel, statusIcons, statusColors, priorityColors } from '@/utils/todo.util.ts';
+import { recurLabel, statusIcons, statusColors, priorityColors } from '@/utils/todo.util';
 
 const props = defineProps<{ todo: TodoItem }>();
 
