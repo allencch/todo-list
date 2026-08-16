@@ -9,6 +9,7 @@ import ListTodoSort from '@/components/todos/ListTodoSort.vue';
 import FormPanel from '@/components/todos/FormPanel.vue';
 import ErrorModal from '@/components/shared/ErrorModal.vue';
 import Toast from '@/components/shared/Toast.vue';
+import { onTodoChanged } from '@/utils/ws';
 import type { TodoItem } from '@/types/todo';
 
 const props = defineProps<{ search?: string }>();
@@ -113,6 +114,8 @@ function handleListScroll(event: Event) {
   }
 }
 
+let unsubscribeTodoChanged: (() => void) | null = null;
+
 onMounted(() => {
   fetchTodos();
 
@@ -122,10 +125,13 @@ onMounted(() => {
     });
     mainResizeObserver.observe(mainRef.value);
   }
+
+  unsubscribeTodoChanged = onTodoChanged(handleTodoChanged);
 });
 
 onBeforeUnmount(() => {
   mainResizeObserver?.disconnect();
+  unsubscribeTodoChanged?.();
 });
 
 function handleUpdate(todo: TodoItem) {
@@ -147,6 +153,37 @@ function handleComplete(nextDueDate: string | null) {
 
   if (nextDueDate) {
     toastMessage.value = `Completed - next one due ${new Date(nextDueDate).toLocaleDateString()}`;
+  }
+}
+
+// Received over the WebSocket whenever another tab/client changes a todo.
+// Only fetches the single item (not the whole list) and patches it in place
+// if it's part of the current view; a todo not currently loaded is left alone.
+async function handleTodoChanged(id: number) {
+  const isEditingThisTodo = editingTodo.value?.id === id;
+  const response = await fetch(`/api/todos/${id}`);
+
+  if (response.status === 404) {
+    const index = todos.value.findIndex((item) => item.id === id);
+    if (index !== -1) {
+      todos.value.splice(index, 1);
+    }
+    if (isEditingThisTodo) {
+      toastMessage.value = 'The todo you are editing was deleted elsewhere.';
+    }
+    return;
+  }
+
+  if (!response.ok) return;
+
+  const updated = await response.json();
+  const index = todos.value.findIndex((item) => item.id === id);
+  if (index !== -1) {
+    todos.value[index] = updated;
+  }
+
+  if (isEditingThisTodo) {
+    toastMessage.value = `"${updated.name}" was changed elsewhere while you're editing it. Reload to see the latest.`;
   }
 }
 

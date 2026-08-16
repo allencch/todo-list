@@ -7,7 +7,7 @@ import DaySelection from './DaySelection.vue';
 import TodoDependencies from './TodoDependencies.vue';
 import PriorityPicker from './PriorityPicker.vue';
 import StatusPicker from './StatusPicker.vue';
-import { safeParseJson, buildErrorMessage } from '@/utils/http';
+import { apiFetch, safeParseJson, buildErrorMessage } from '@/utils/http';
 
 const props = defineProps<{ todo?: TodoItem }>();
 
@@ -64,7 +64,7 @@ const showErrorModal = ref(false);
 const errorMessage = ref('');
 
 async function addDependency(dependency: { id: number; name: string; status: string }) {
-  const response = await fetch(`/api/todos/${todoId.value}/dependencies/${dependency.id}`, {
+  const response = await apiFetch(`/api/todos/${todoId.value}/dependencies/${dependency.id}`, {
     method: 'POST',
   });
 
@@ -81,7 +81,7 @@ async function addDependency(dependency: { id: number; name: string; status: str
 }
 
 async function removeDependency(dependencyId: number) {
-  const response = await fetch(`/api/todos/${todoId.value}/dependencies/${dependencyId}`, {
+  const response = await apiFetch(`/api/todos/${todoId.value}/dependencies/${dependencyId}`, {
     method: 'DELETE',
   });
 
@@ -96,7 +96,7 @@ async function removeDependency(dependencyId: number) {
 }
 
 async function changeStatus(newStatus: 'not_started' | 'in_progress' | 'completed' | 'archived') {
-  const response = await fetch(`/api/todos/${todoId.value}/status`, {
+  const response = await apiFetch(`/api/todos/${todoId.value}/status`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ status: newStatus, version: version.value }),
@@ -136,7 +136,7 @@ function buildRecurFields() {
 }
 
 function createTodo() {
-  return fetch('/api/todos', {
+  return apiFetch('/api/todos', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -150,7 +150,7 @@ function createTodo() {
 }
 
 function patchTodo() {
-  return fetch(`/api/todos/${todoId.value}`, {
+  return apiFetch(`/api/todos/${todoId.value}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({

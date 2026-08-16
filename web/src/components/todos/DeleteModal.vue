@@ -2,7 +2,7 @@
 import { ref } from 'vue';
 import ErrorModal from '@/components/shared/ErrorModal.vue';
 import type { TodoItem } from '@/types/todo';
-import { safeParseJson, buildErrorMessage } from '@/utils/http';
+import { apiFetch, safeParseJson, buildErrorMessage } from '@/utils/http';
 
 const props = defineProps<{ todo: TodoItem }>();
 
@@ -15,7 +15,7 @@ const showErrorModal = ref(false);
 const errorMessage = ref('');
 
 async function handleDelete() {
-  const response = await fetch(`/api/todos/${props.todo.id}`, {
+  const response = await apiFetch(`/api/todos/${props.todo.id}`, {
     method: 'DELETE',
   });
 

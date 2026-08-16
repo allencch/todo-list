@@ -8,7 +8,7 @@ import DependencyList from './DependencyList.vue';
 import PriorityPicker from './PriorityPicker.vue';
 import StatusPicker from './StatusPicker.vue';
 import ErrorModal from '@/components/shared/ErrorModal.vue';
-import { safeParseJson, buildErrorMessage } from '@/utils/http';
+import { apiFetch, safeParseJson, buildErrorMessage } from '@/utils/http';
 import { recurLabel, statusIcons, statusColors, priorityColors } from '@/utils/todo.util.ts';
 
 const props = defineProps<{ todo: TodoItem }>();
@@ -40,7 +40,7 @@ function handleDelete(todo: TodoItem) {
 async function changeStatus(status: string) {
   if (status === props.todo.status) return;
 
-  const response = await fetch(`/api/todos/${props.todo.id}/status`, {
+  const response = await apiFetch(`/api/todos/${props.todo.id}/status`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -69,7 +69,7 @@ async function changeStatus(status: string) {
 async function changePriority(priority: string | null) {
   if (priority === (props.todo.priority ?? null)) return;
 
-  const response = await fetch(`/api/todos/${props.todo.id}`, {
+  const response = await apiFetch(`/api/todos/${props.todo.id}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
