@@ -8,4 +8,6 @@ dotenv.config({ path: '.env' });
 export const env = {
   databaseUrl: process.env.DATABASE_URL!,
   port: Number(process.env.PORT ?? 3000),
+  ollamaBaseUrl: process.env.OLLAMA_BASE_URL ?? 'http://localhost:11434',
+  ollamaModel: process.env.OLLAMA_MODEL ?? 'granite4.1:3b',
 };
