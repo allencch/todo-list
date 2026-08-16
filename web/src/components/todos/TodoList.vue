@@ -7,6 +7,7 @@ import ListTodoFilters from '@/components/todos/ListTodoFilters.vue';
 import ListTodoSort from '@/components/todos/ListTodoSort.vue';
 import FormPanel from '@/components/todos/FormPanel.vue';
 import ErrorModal from '@/components/shared/ErrorModal.vue';
+import Toast from '@/components/shared/Toast.vue';
 import type { TodoItem } from '@/types/todo';
 
 const props = defineProps<{ search?: string }>();
@@ -19,6 +20,7 @@ const PAGE_SIZE = 20;
 const todos = ref<TodoItem[]>([]);
 const filterState = ref<Record<string, string>>({ status: '' });
 const error = ref('');
+const toastMessage = ref('');
 const nextCursor = ref<string | null>(null);
 const isLoadingMore = ref(false);
 
@@ -120,6 +122,14 @@ function handleDelete(todo: TodoItem) {
   }
 }
 
+function handleComplete(nextDueDate: string | null) {
+  fetchTodos();
+
+  if (nextDueDate) {
+    toastMessage.value = `Completed - next one due ${new Date(nextDueDate).toLocaleDateString()}`;
+  }
+}
+
 function handleFilterChange(filter: Record<string, string>) {
   Object.assign(filterState.value, filter);
   fetchTodos();
@@ -185,7 +195,7 @@ function handlePanelSubmit() {
             :todo="todo"
             @submit="handleUpdate"
             @delete="handleDelete"
-            @complete="fetchTodos"
+            @complete="handleComplete"
           />
         </ul>
         <p v-if="isLoadingMore" class="py-3 text-center text-sm text-gray-400">Loading more...</p>
@@ -199,7 +209,7 @@ function handlePanelSubmit() {
         :todo="editingTodo ?? undefined"
         @close="closePanel"
         @submit="handlePanelSubmit"
-        @complete="fetchTodos"
+        @complete="handleComplete"
       />
       <div v-else class="flex h-full items-center justify-center p-4 text-sm text-gray-400">
         Select a todo to view details
@@ -208,4 +218,5 @@ function handlePanelSubmit() {
   </div>
 
   <ErrorModal v-if="error" :message="error" @close="error = ''" />
+  <Toast v-if="toastMessage" :message="toastMessage" @close="toastMessage = ''" />
 </template>

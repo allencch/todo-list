@@ -19,7 +19,7 @@ const router = useRouter();
 const emit = defineEmits<{
   submit: [todo: TodoItem];
   delete: [todo: TodoItem];
-  complete: [];
+  complete: [nextDueDate: string | null];
 }>();
 
 const expanded = ref(false);
@@ -56,13 +56,14 @@ async function changeStatus(status: string) {
     return;
   }
 
+  const updated = await response.json();
+
   if (status === 'completed') {
-    emit('complete');
+    emit('complete', updated.nextDueDate ?? null);
     return;
   }
 
-  const todo = await response.json();
-  emit('submit', todo);
+  emit('submit', updated);
 }
 
 async function changePriority(priority: string | null) {

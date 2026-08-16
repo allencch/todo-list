@@ -13,7 +13,7 @@ const props = defineProps<{ todo?: TodoItem }>();
 const emit = defineEmits<{
   close: [];
   submit: [todo: TodoItem];
-  complete: [];
+  complete: [nextDueDate: string | null];
 }>();
 
 const todoId = ref(props.todo?.id ?? null);
@@ -113,7 +113,7 @@ async function changeStatus(newStatus: 'not_started' | 'in_progress' | 'complete
   version.value = updated.version;
 
   if (newStatus === 'completed') {
-    emit('complete');
+    emit('complete', updated.nextDueDate ?? null);
   }
 }
 
