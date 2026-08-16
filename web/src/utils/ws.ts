@@ -6,6 +6,8 @@ type TodoChangedListener = (id: number) => void;
 
 const listeners = new Set<TodoChangedListener>();
 
+let started = false;
+
 function connect() {
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
   const socket = new WebSocket(`${protocol}//${window.location.host}/api/ws`);
@@ -29,7 +31,15 @@ function connect() {
   });
 }
 
-connect();
+// Call once from the app's entry point (main.ts), not at module import time --
+// importing this module (or anything that imports it, like utils/http.ts)
+// must not have the side effect of opening a real network connection, or every
+// test that touches those modules ends up trying to connect a real WebSocket.
+export function connectWebSocket() {
+  if (started) return;
+  started = true;
+  connect();
+}
 
 export function onTodoChanged(listener: TodoChangedListener) {
   listeners.add(listener);
