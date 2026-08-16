@@ -1,7 +1,7 @@
 import { eq, isNull, and, sql } from 'drizzle-orm';
 import { db } from '@/db/client';
 import { todoItems, TodoItem } from '@/db/schema';
-import type { CustomRecurrence } from '@/modules/todo.types';
+import type { CustomRecurrence } from '@/types/todos.type.ts';
 
 const RECURRING_TYPES = ['daily', 'weekly', 'monthly', 'yearly', 'custom'];
 
