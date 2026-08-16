@@ -1,0 +1,838 @@
+# Generated on 2026-08-16 by Claude (Sonnet 5, Anthropic), via a documented
+# prompt at docs/prompt-swagger-generator.md. Review before relying on it for
+# anything beyond local swagger-ui reference.
+openapi: 3.0.3
+info:
+  title: Todo List API
+  description: >-
+    A todo list API built with Fastify. Supports CRUD on todos, status
+    transitions, recurring todos, and a many-to-many "dependency" relationship
+    between todos (a todo cannot move to `in_progress` until all of its
+    dependencies are `completed`). There is no authentication or authorization.
+  version: 1.0.0
+servers:
+  - url: /api
+tags:
+  - name: Todos
+    description: Create, read, update, delete, and list todos.
+  - name: Dependencies
+    description: Manage the "must be completed before" relationship between todos.
+  - name: Health
+    description: Service liveness check.
+paths:
+  /health:
+    get:
+      tags:
+        - Health
+      summary: Health check
+      operationId: getHealth
+      responses:
+        '200':
+          description: The service is up.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                required:
+                  - status
+              example:
+                status: ok
+  /todos:
+    get:
+      tags:
+        - Todos
+      summary: List todos
+      description: >-
+        Lists non-deleted todos with optional filtering, sorting, and either
+        offset-style `limit` or cursor-based `pageSize`/`cursor` pagination.
+        Each todo includes its resolved `dependencies` and, for completed
+        recurring todos, the `nextDueDate` of the generated follow-up todo.
+      operationId: listTodos
+      parameters:
+        - name: status
+          in: query
+          description: Filter by exact status.
+          schema:
+            $ref: '#/components/schemas/Status'
+        - name: priority
+          in: query
+          description: Filter by exact priority.
+          schema:
+            $ref: '#/components/schemas/Priority'
+        - name: content
+          in: query
+          description: Case-insensitive substring match against `name` or `description`.
+          schema:
+            type: string
+        - name: dueDateMin
+          in: query
+          description: Only include todos with `dueDate` on or after this instant.
+          schema:
+            type: string
+            format: date-time
+        - name: dueDateMax
+          in: query
+          description: Only include todos with `dueDate` on or before this instant.
+          schema:
+            type: string
+            format: date-time
+        - name: sortBy
+          in: query
+          description: Column to sort by. Defaults to `id` descending when omitted.
+          schema:
+            type: string
+            enum: [dueDate, priority, status, name, createdAt]
+        - name: sortOrder
+          in: query
+          description: Sort direction. Only meaningful together with `sortBy`.
+          schema:
+            type: string
+            enum: [asc, desc]
+        - name: limit
+          in: query
+          description: >-
+            Maximum rows to return for a plain (non-cursor) list. Ignored if
+            `pageSize` is also given.
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+        - name: excludeId
+          in: query
+          description: >-
+            Excludes the todo with this id, and every todo already listed as
+            one of its dependencies. Useful when picking a new dependency for
+            a given todo.
+          schema:
+            type: integer
+            minimum: 1
+        - name: pageSize
+          in: query
+          description: >-
+            Enables cursor-based pagination and sets the page size. When set,
+            the response is `{ data, nextCursor }` instead of a bare array.
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+        - name: cursor
+          in: query
+          description: >-
+            Opaque cursor from a previous response's `nextCursor`, for fetching
+            the next page. Only used together with `pageSize`.
+          schema:
+            type: string
+        - name: dependencyStatus
+          in: query
+          description: >-
+            `blocked` returns todos with at least one non-completed
+            dependency; `unblocked` returns todos that have at least one
+            dependency and all of them are completed.
+          schema:
+            type: string
+            enum: [blocked, unblocked]
+      responses:
+        '200':
+          description: >-
+            A bare array of todos, or `{ data, nextCursor }` when `pageSize`
+            was supplied.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - type: array
+                    items:
+                      $ref: '#/components/schemas/TodoItemDetail'
+                  - $ref: '#/components/schemas/TodoItemPage'
+              examples:
+                plainList:
+                  summary: Plain list (no pageSize)
+                  value:
+                    - id: 12
+                      name: Renew passport
+                      description: Needed before the November trip
+                      dueDate: '2026-09-01T00:00:00.000Z'
+                      status: not_started
+                      priority: high
+                      isAllDay: true
+                      meta: {}
+                      recurType: null
+                      recurValue: null
+                      recurCustom: {}
+                      parentId: null
+                      dependentId: null
+                      deletedAt: null
+                      version: 1
+                      createdAt: '2026-08-01T09:00:00.000Z'
+                      updatedAt: '2026-08-01T09:00:00.000Z'
+                      nextDueDate: null
+                      dependencies: []
+                pagedList:
+                  summary: Cursor-paginated list (pageSize set)
+                  value:
+                    data:
+                      - id: 12
+                        name: Renew passport
+                        description: Needed before the November trip
+                        dueDate: '2026-09-01T00:00:00.000Z'
+                        status: not_started
+                        priority: high
+                        isAllDay: true
+                        meta: {}
+                        recurType: null
+                        recurValue: null
+                        recurCustom: {}
+                        parentId: null
+                        dependentId: null
+                        deletedAt: null
+                        version: 1
+                        createdAt: '2026-08-01T09:00:00.000Z'
+                        updatedAt: '2026-08-01T09:00:00.000Z'
+                        nextDueDate: null
+                        dependencies: []
+                    nextCursor: eyJ2YWx1ZSI6MTIsImlkIjoxMn0
+        '400':
+          description: Invalid query parameters, or an invalid/undecodable `cursor`.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ValidationError'
+                  - $ref: '#/components/schemas/ErrorMessage'
+              example:
+                error: Invalid cursor
+    post:
+      tags:
+        - Todos
+      summary: Create a todo
+      operationId: createTodo
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTodoRequest'
+            example:
+              name: Renew passport
+              description: Needed before the November trip
+              dueDate: '2026-09-01T00:00:00.000Z'
+              priority: high
+      responses:
+        '201':
+          description: The created todo.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TodoItem'
+              example:
+                id: 12
+                name: Renew passport
+                description: Needed before the November trip
+                dueDate: '2026-09-01T00:00:00.000Z'
+                status: not_started
+                priority: high
+                isAllDay: true
+                meta: {}
+                recurType: null
+                recurValue: null
+                recurCustom: {}
+                parentId: null
+                dependentId: null
+                deletedAt: null
+                version: 1
+                createdAt: '2026-08-01T09:00:00.000Z'
+                updatedAt: '2026-08-01T09:00:00.000Z'
+        '400':
+          description: Request body failed validation.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+  /todos/{id}:
+    get:
+      tags:
+        - Todos
+      summary: Get a todo by id
+      operationId: getTodo
+      parameters:
+        - $ref: '#/components/parameters/TodoId'
+      responses:
+        '200':
+          description: The todo, including its dependencies and next due date.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TodoItemDetail'
+              example:
+                id: 12
+                name: Renew passport
+                description: Needed before the November trip
+                dueDate: '2026-09-01T00:00:00.000Z'
+                status: not_started
+                priority: high
+                isAllDay: true
+                meta: {}
+                recurType: null
+                recurValue: null
+                recurCustom: {}
+                parentId: null
+                dependentId: null
+                deletedAt: null
+                version: 1
+                createdAt: '2026-08-01T09:00:00.000Z'
+                updatedAt: '2026-08-01T09:00:00.000Z'
+                nextDueDate: null
+                dependencies:
+                  - id: 3
+                    name: Book flight
+                    status: completed
+        '400':
+          description: The `id` path parameter is not a positive integer.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+        '404':
+          description: No non-deleted todo with this id exists.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
+              example:
+                error: Todo not found
+    patch:
+      tags:
+        - Todos
+      summary: Update a todo
+      description: >-
+        Partial update, guarded by optimistic locking: `version` must match
+        the todo's current version or the request is rejected.
+      operationId: updateTodo
+      parameters:
+        - $ref: '#/components/parameters/TodoId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateTodoRequest'
+            example:
+              name: Renew passport (expedited)
+              priority: high
+              version: 1
+      responses:
+        '200':
+          description: The updated todo.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TodoItem'
+              example:
+                id: 12
+                name: Renew passport (expedited)
+                description: Needed before the November trip
+                dueDate: '2026-09-01T00:00:00.000Z'
+                status: not_started
+                priority: high
+                isAllDay: true
+                meta: {}
+                recurType: null
+                recurValue: null
+                recurCustom: {}
+                parentId: null
+                dependentId: null
+                deletedAt: null
+                version: 2
+                createdAt: '2026-08-01T09:00:00.000Z'
+                updatedAt: '2026-08-01T10:00:00.000Z'
+        '400':
+          description: The request body or `id` path parameter failed validation.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+        '404':
+          description: No non-deleted todo with this id exists.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
+              example:
+                error: Todo not found
+        '409':
+          description: >-
+            `version` did not match the todo's current version (someone else
+            modified it first).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
+              example:
+                error: This todo was modified by someone else. Please reload and try again.
+    delete:
+      tags:
+        - Todos
+      summary: Soft-delete a todo
+      description: Sets `deletedAt` and bumps `version`; does not remove the row.
+      operationId: deleteTodo
+      parameters:
+        - $ref: '#/components/parameters/TodoId'
+      responses:
+        '204':
+          description: The todo was soft-deleted.
+        '400':
+          description: The `id` path parameter is not a positive integer.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+        '404':
+          description: No non-deleted todo with this id exists.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
+              example:
+                error: Todo not found
+  /todos/{id}/status:
+    post:
+      tags:
+        - Todos
+      summary: Change a todo's status
+      description: >-
+        Guarded by optimistic locking via `version`. Moving to `in_progress`
+        is blocked while any dependency is not `completed`. Moving to
+        `completed` on a recurring todo (`recurType` set) additionally
+        generates the next occurrence, whose due date is reported back as
+        `nextDueDate`. Setting a status the todo is already in is a no-op that
+        returns the todo unchanged.
+      operationId: updateTodoStatus
+      parameters:
+        - $ref: '#/components/parameters/TodoId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateStatusRequest'
+            example:
+              status: completed
+              version: 2
+      responses:
+        '200':
+          description: The todo after the status change.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TodoItemWithNextDueDate'
+              example:
+                id: 12
+                name: Renew passport
+                description: Needed before the November trip
+                dueDate: '2026-09-01T00:00:00.000Z'
+                status: completed
+                priority: high
+                isAllDay: true
+                meta: {}
+                recurType: null
+                recurValue: null
+                recurCustom: {}
+                parentId: null
+                dependentId: null
+                deletedAt: null
+                version: 3
+                createdAt: '2026-08-01T09:00:00.000Z'
+                updatedAt: '2026-08-16T10:00:00.000Z'
+                nextDueDate: null
+        '400':
+          description: >-
+            Request body/path validation failed, or the todo has incomplete
+            dependencies and cannot move to `in_progress`.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ValidationError'
+                  - $ref: '#/components/schemas/IncompleteDependenciesError'
+              example:
+                error: Cannot start todo until all dependencies are completed
+                incompleteDependencies:
+                  - id: 3
+                    name: Book flight
+        '404':
+          description: No non-deleted todo with this id exists.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
+              example:
+                error: Todo not found
+        '409':
+          description: >-
+            `version` did not match the todo's current version (someone else
+            modified it first).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
+              example:
+                error: This todo was modified by someone else. Please reload and try again.
+  /todos/{id}/dependencies/{dependencyId}:
+    post:
+      tags:
+        - Dependencies
+      summary: Add a dependency
+      description: >-
+        Marks the todo with `dependencyId` as required to be completed before
+        the todo `id` can move to `in_progress`.
+      operationId: addDependency
+      parameters:
+        - $ref: '#/components/parameters/TodoId'
+        - $ref: '#/components/parameters/DependencyId'
+      responses:
+        '204':
+          description: The dependency link was created.
+        '400':
+          description: Path parameters failed validation, or `id` equals `dependencyId`.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ValidationError'
+                  - $ref: '#/components/schemas/ErrorMessage'
+              example:
+                error: A todo cannot depend on itself
+        '404':
+          description: The todo, or the dependency todo, does not exist.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
+              example:
+                error: Dependency todo not found
+        '409':
+          description: This dependency link already exists.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
+              example:
+                error: Dependency already exists
+    delete:
+      tags:
+        - Dependencies
+      summary: Remove a dependency
+      operationId: removeDependency
+      parameters:
+        - $ref: '#/components/parameters/TodoId'
+        - $ref: '#/components/parameters/DependencyId'
+      responses:
+        '204':
+          description: The dependency link was removed.
+        '400':
+          description: Path parameters failed validation.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+        '404':
+          description: >-
+            The todo, the dependency todo, or the dependency link itself does
+            not exist.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
+              example:
+                error: No dependency found
+components:
+  parameters:
+    TodoId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+        minimum: 1
+    DependencyId:
+      name: dependencyId
+      in: path
+      required: true
+      schema:
+        type: integer
+        minimum: 1
+  schemas:
+    Status:
+      type: string
+      enum: [not_started, in_progress, completed, archived]
+    Priority:
+      type: string
+      enum: [low, medium, high]
+    RecurType:
+      type: string
+      enum: [daily, weekly, monthly, yearly, custom]
+    CustomRecurrence:
+      description: >-
+        Required when `recurType` is `custom`; ignored otherwise. Exactly one
+        of the two shapes below, discriminated by `type`.
+      oneOf:
+        - type: object
+          properties:
+            type:
+              type: string
+              enum: [weekly]
+            weekdays:
+              type: array
+              description: 0 (Sunday) through 6 (Saturday).
+              items:
+                type: integer
+                minimum: 0
+                maximum: 6
+          required: [type, weekdays]
+        - type: object
+          properties:
+            type:
+              type: string
+              enum: [monthly]
+            monthDays:
+              type: array
+              items:
+                type: integer
+                minimum: 1
+          required: [type, monthDays]
+    DependencySummary:
+      type: object
+      description: A minimal view of a todo that another todo depends on.
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        status:
+          $ref: '#/components/schemas/Status'
+      required: [id, name, status]
+    TodoItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+          maxLength: 255
+        description:
+          type: string
+          nullable: true
+        dueDate:
+          type: string
+          format: date-time
+          nullable: true
+        status:
+          $ref: '#/components/schemas/Status'
+        priority:
+          allOf:
+            - $ref: '#/components/schemas/Priority'
+          nullable: true
+        isAllDay:
+          type: boolean
+        meta:
+          type: object
+          additionalProperties: true
+        recurType:
+          allOf:
+            - $ref: '#/components/schemas/RecurType'
+          nullable: true
+        recurValue:
+          type: integer
+          nullable: true
+        recurCustom:
+          type: object
+          additionalProperties: true
+          description: >-
+            Shape matches `CustomRecurrence` when `recurType` is `custom`;
+            otherwise an untyped object (defaults to `{}`).
+        parentId:
+          type: integer
+          nullable: true
+          description: Set on a todo generated as the next occurrence of a recurring parent.
+        dependentId:
+          type: integer
+          nullable: true
+        deletedAt:
+          type: string
+          format: date-time
+          nullable: true
+        version:
+          type: integer
+          description: Optimistic lock counter, incremented on every update.
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+          nullable: true
+      required:
+        - id
+        - name
+        - status
+        - isAllDay
+        - meta
+        - recurCustom
+        - version
+        - createdAt
+    TodoItemWithNextDueDate:
+      allOf:
+        - $ref: '#/components/schemas/TodoItem'
+        - type: object
+          properties:
+            nextDueDate:
+              type: string
+              format: date-time
+              nullable: true
+              description: >-
+                Due date of the next occurrence generated when this todo was
+                just completed. Only meaningful right after a `completed`
+                status change on a recurring todo; `null` otherwise.
+    TodoItemDetail:
+      allOf:
+        - $ref: '#/components/schemas/TodoItemWithNextDueDate'
+        - type: object
+          properties:
+            dependencies:
+              type: array
+              items:
+                $ref: '#/components/schemas/DependencySummary'
+          required: [dependencies]
+    TodoItemPage:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/TodoItemDetail'
+        nextCursor:
+          type: string
+          nullable: true
+          description: Opaque cursor for the next page, or `null` if this was the last page.
+      required: [data, nextCursor]
+    CreateTodoRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        description:
+          type: string
+        dueDate:
+          type: string
+          format: date-time
+        priority:
+          $ref: '#/components/schemas/Priority'
+        recurType:
+          allOf:
+            - $ref: '#/components/schemas/RecurType'
+          nullable: true
+        recurValue:
+          type: integer
+          minimum: 1
+          nullable: true
+        recurCustom:
+          $ref: '#/components/schemas/CustomRecurrence'
+      required: [name]
+      description: >-
+        `recurCustom` is required when `recurType` is `custom` (enforced at
+        runtime; not expressible as plain JSON Schema).
+    UpdateTodoRequest:
+      type: object
+      description: >-
+        All fields from `CreateTodoRequest` are optional here, plus a required
+        `version` for optimistic locking. Same `recurCustom`-required-when-
+        `recurType`-is-`custom` rule applies.
+      properties:
+        name:
+          type: string
+          minLength: 1
+        description:
+          type: string
+        dueDate:
+          type: string
+          format: date-time
+        priority:
+          allOf:
+            - $ref: '#/components/schemas/Priority'
+          nullable: true
+        recurType:
+          allOf:
+            - $ref: '#/components/schemas/RecurType'
+          nullable: true
+        recurValue:
+          type: integer
+          minimum: 1
+          nullable: true
+        recurCustom:
+          $ref: '#/components/schemas/CustomRecurrence'
+        version:
+          type: integer
+          minimum: 1
+      required: [version]
+    UpdateStatusRequest:
+      type: object
+      properties:
+        status:
+          $ref: '#/components/schemas/Status'
+        version:
+          type: integer
+          minimum: 1
+      required: [status, version]
+    ErrorMessage:
+      type: object
+      properties:
+        error:
+          type: string
+      required: [error]
+    IncompleteDependenciesError:
+      type: object
+      properties:
+        error:
+          type: string
+        incompleteDependencies:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+              name:
+                type: string
+            required: [id, name]
+      required: [error, incompleteDependencies]
+    ValidationError:
+      type: object
+      description: >-
+        Shape of Zod's `error.flatten()`: field-level messages under
+        `fieldErrors`, form-level messages under `formErrors`.
+      properties:
+        error:
+          type: object
+          properties:
+            formErrors:
+              type: array
+              items:
+                type: string
+            fieldErrors:
+              type: object
+              additionalProperties:
+                type: array
+                items:
+                  type: string
+          required: [formErrors, fieldErrors]
+      required: [error]
+      example:
+        error:
+          formErrors: []
+          fieldErrors:
+            name: ['String must contain at least 1 character(s)']
