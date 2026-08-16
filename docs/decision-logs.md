@@ -2,6 +2,16 @@
 
 Decision logs and other general logs in reverse order.
 
+
+## 2026-08-16
+
+> The API should support multiple users accessing the same TODO list concurrently.
+
+To prevent user to overwrite the others, and this is about race condition.
+For the current stage, optimistic lock is the best solution I think for the current stage.
+If allows sync and conflicting detection, this will be much more complex.
+
+
 ## 2026-08-15
 
 Pagination. Choosing cursor-based pagination, instead of offset-based.

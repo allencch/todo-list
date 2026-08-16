@@ -43,6 +43,7 @@ export const todoItems = pgTable(
       onDelete: 'set null',
     }),
     deletedAt: timestamp('deleted_at'),
+    version: integer('version').default(1).notNull(),
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at')
       .defaultNow()

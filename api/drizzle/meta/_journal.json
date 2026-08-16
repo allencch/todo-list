@@ -57,6 +57,13 @@
       "when": 1786816386430,
       "tag": "0007_misty_cobalt_man",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1786849547250,
+      "tag": "0008_puzzling_boom_boom",
+      "breakpoints": true
     }
   ]
 }
