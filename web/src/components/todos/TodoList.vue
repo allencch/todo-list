@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onBeforeUnmount, nextTick } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { useVirtualizer } from '@tanstack/vue-virtual';
 import Item from '@/components/todos/Item.vue';
 import AddItem from '@/components/todos/AddItem.vue';
 import ListTodoFilters from '@/components/todos/ListTodoFilters.vue';
@@ -28,8 +29,27 @@ const editingTodo = ref<TodoItem | null>(null);
 const isCreating = computed(() => route.query.new === '1');
 
 const mainRef = ref<HTMLElement | null>(null);
-const listRef = ref<HTMLElement | null>(null);
-let listResizeObserver: ResizeObserver | null = null;
+let mainResizeObserver: ResizeObserver | null = null;
+
+const rowVirtualizer = useVirtualizer(
+  computed(() => ({
+    count: todos.value.length,
+    getScrollElement: () => mainRef.value,
+    estimateSize: () => 56,
+    overscan: 8,
+    getItemKey: (index: number) => todos.value[index]?.id ?? index,
+  }))
+);
+
+const virtualRows = computed(() => rowVirtualizer.value.getVirtualItems());
+const totalSize = computed(() => rowVirtualizer.value.getTotalSize());
+
+function measureItem(el: unknown) {
+  const domEl = (el as { $el?: Element })?.$el;
+  if (domEl) {
+    rowVirtualizer.value.measureElement(domEl);
+  }
+}
 
 async function fillViewportIfNeeded() {
   await nextTick();
@@ -96,16 +116,16 @@ function handleListScroll(event: Event) {
 onMounted(() => {
   fetchTodos();
 
-  if (listRef.value) {
-    listResizeObserver = new ResizeObserver(() => {
+  if (mainRef.value) {
+    mainResizeObserver = new ResizeObserver(() => {
       fillViewportIfNeeded();
     });
-    listResizeObserver.observe(listRef.value);
+    mainResizeObserver.observe(mainRef.value);
   }
 });
 
 onBeforeUnmount(() => {
-  listResizeObserver?.disconnect();
+  mainResizeObserver?.disconnect();
 });
 
 function handleUpdate(todo: TodoItem) {
@@ -191,15 +211,23 @@ function handlePanelSubmit() {
       <ListTodoSort @change="handleFilterChange" />
 
       <main ref="mainRef" class="flex-1 overflow-y-auto px-4 py-4" @scroll="handleListScroll">
-        <ul ref="listRef" class="divide-y divide-gray-200 rounded-md border border-gray-300">
-          <Item
-            v-for="todo in todos"
-            :key="todo.id"
-            :todo="todo"
-            @submit="handleUpdate"
-            @delete="handleDelete"
-            @complete="handleComplete"
-          />
+        <ul
+          class="relative divide-y divide-gray-200 rounded-md border border-gray-300"
+          :style="{ height: `${totalSize}px` }"
+        >
+          <template v-for="virtualRow in virtualRows" :key="virtualRow.key">
+            <Item
+              v-if="todos[virtualRow.index]"
+              :ref="measureItem"
+              :data-index="virtualRow.index"
+              :todo="todos[virtualRow.index]!"
+              class="absolute top-0 left-0 w-full"
+              :style="{ transform: `translateY(${virtualRow.start}px)` }"
+              @submit="handleUpdate"
+              @delete="handleDelete"
+              @complete="handleComplete"
+            />
+          </template>
         </ul>
         <p v-if="isLoadingMore" class="py-3 text-center text-sm text-gray-400">Loading more...</p>
       </main>
