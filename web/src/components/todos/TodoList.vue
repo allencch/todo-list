@@ -56,7 +56,7 @@ function measureItem(el: unknown) {
 async function fillViewportIfNeeded() {
   await nextTick();
   const el = mainRef.value;
-  while (el && nextCursor.value && el.scrollHeight <= el.clientHeight) {
+  while (el && el.clientHeight > 0 && nextCursor.value && el.scrollHeight <= el.clientHeight) {
     await loadMoreTodos();
     await nextTick();
   }
