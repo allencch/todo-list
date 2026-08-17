@@ -107,6 +107,12 @@ Then, we can view the document use this `http://localhost:3000/api/openapi.yaml`
 
 Refer [Decision Logs here](docs/decision-logs.md).
 
+## Extra optional feature
+
+Setup Ollama locally and pull a SLM (small language modal).
+Tested on `granite4.1:3b`.
+This allows AI summarize feature.
+
 
 ## Commands cheatsheet
 

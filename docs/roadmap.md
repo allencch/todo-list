@@ -31,6 +31,7 @@ Web:
 - [x] Responsive for mobile
 - [x] Toast
 - [ ] Item editing should have indicator
+- [ ] Keyboard navigation
 
 
 ## Extra features
