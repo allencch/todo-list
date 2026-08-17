@@ -66,7 +66,7 @@ This is to test the scalability of the application.
 To use docker, run
 
 ```bash
-docker compose up
+docker compose -f docker-compose.yml up
 ```
 
 Then run the migration with,
@@ -74,6 +74,10 @@ Then run the migration with,
 ```bash
 docker exec todo-list-api-1 node_modules/.bin/drizzle-kit migrate
 ```
+
+Then in the web browser, visit `http://localhost:8080`, this can access the application.
+
+NOTE: Docker version doesn't support AI summarize
 
 
 ## Stack
